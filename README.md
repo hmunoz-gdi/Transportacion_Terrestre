@@ -54,6 +54,12 @@ Escribe y confirma la contraseña nueva. La terminal oculta lo que tecleas. El c
 - `domicilios.json` incluye una muestra. Sustituye sus filas por el catálogo autorizado de estado, municipio o alcaldía, colonia y código postal. Cada código postal asociado a una colonia ocupa una fila. Reinicia la aplicación para recargar el catálogo.
 - La base comienza vacía. La importación de SQL Server y los PDF históricos, las cesiones, sustituciones, captura de fotografía y carátula quedan para sus módulos respectivos.
 
+## Definir perfiles
+
+En **Usuarios → Definir perfiles**, selecciona **Nuevo perfil**, escribe su nombre y marca las operaciones en el árbol. Luego vuelve a **Usuarios** y asigna el perfil al crear una cuenta o al cambiar una existente.
+
+Los permisos de cambio incluyen la consulta del módulo. Los módulos de la ficha requieren consultar Permisionarios. Los perfiles del sistema mantienen sus permisos y los perfiles personalizados se guardan en las tablas de Identity. Al guardar cambios en un perfil se invalidan las sesiones de las cuentas asignadas.
+
 ## Agregar módulos
 
-Cada módulo declara sus rutas en `Modules/` con un método `Mapear`, registrado desde `Program.cs`. Usa las políticas `Consulta`, `Captura` o `Admin` en el grupo correspondiente y `Acceso.Registrar` para las operaciones que deban quedar en bitácora. `RegistroDb.cs` contiene el modelo. La migración inicial está en `Migraciones/`. Para ampliar el esquema, agrega una migración con `dotnet ef migrations add NombreDelCambio --output-dir Migraciones`. La aplicación aplica migraciones pendientes al arrancar.
+Cada módulo declara sus rutas en `Modules/` con un método `Mapear`, registrado desde `Program.cs`. Registra los permisos del módulo en `Modules/Perfiles.cs` y usa esas políticas o `Admin` en las rutas correspondientes y `Acceso.Registrar` para las operaciones que deban quedar en bitácora. `RegistroDb.cs` contiene el modelo. La migración inicial está en `Migraciones/`. Para ampliar el esquema, agrega una migración con `dotnet ef migrations add NombreDelCambio --output-dir Migraciones`. La aplicación aplica migraciones pendientes al arrancar.

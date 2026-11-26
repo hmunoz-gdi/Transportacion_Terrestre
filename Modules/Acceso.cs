@@ -160,44 +160,59 @@ public static class Acceso
             : "No fue posible iniciar sesión. Revisa tu usuario y contraseña.");
     }
 
-    private static async Task<IResult> Panel(HttpContext http, UserManager<IdentityUser> users, RegistroDb db)
+    private static async Task<IResult> Panel(HttpContext http, UserManager<IdentityUser> users, RoleManager<IdentityRole> roles, RegistroDb db, string? id)
     {
         var accounts = await users.Users.OrderBy(row => row.UserName).ToListAsync();
+        var selected = accounts.SingleOrDefault(account => account.Id == id);
+        var currentRoles = selected is null ? [] : await users.GetRolesAsync(selected);
+        var available = await roles.Roles.Where(role => role.Name != "Administrador").OrderBy(role => role.Name).ToListAsync();
+        string options = string.Concat(available.Select(role =>
+            $"<option {(currentRoles.Contains(role.Name!) ? "selected" : "")}>{Vista.E(role.Name)}</option>"));
         string rows = "";
         foreach (var account in accounts)
         {
             var profiles = await users.GetRolesAsync(account);
             string name = Vista.E(account.UserName);
             string status = await users.IsLockedOutAsync(account) ? "Bloqueada" : "Activa";
-            rows += $"""<li><strong>{name}</strong> · {Vista.E(string.Join(", ", profiles))} · {status}</li>""";
+            rows += $"""<a href="/usuarios?id={Uri.EscapeDataString(account.Id)}" {(selected == account ? "aria-current=page" : "")}><strong>{name}</strong><small>{Vista.E(string.Join(", ", profiles))} · {status}</small></a>""";
         }
         var events = await db.Eventos.OrderByDescending(row => row.Id).Take(50).ToListAsync();
         string audit = string.Concat(events.Select(row => $"<li>{row.Fecha:yyyy-MM-dd HH:mm} UTC · {Vista.E(row.Actor)} · {Vista.E(row.Accion)} · {Vista.E(row.Detalle)}</li>"));
         return Vista.Pagina(http, "Usuarios y perfiles", $"""
-            <div class=grid><section class=panel><h2>Cuentas</h2><ul>{rows}</ul></section>
-            <form class=panel method=post>{Vista.Csrf(http)}<h2>Administrar cuenta</h2>
-            <div class=grid>{Vista.Campo("Usuario", "usuario", max: 100, atributos: "required autocomplete=off")}
-            <label>Perfil<select name=perfil><option>Consulta</option><option>Captura</option></select></label>
+            <p><a class=button href=/perfiles>Definir perfiles</a></p>
+            <div class=profile-layout><section class=panel><h2>Cuentas</h2><div class=profile-list>{rows}<a href=/usuarios>Nueva cuenta</a></div></section>
+            <form class=panel method=post action=/usuarios>{Vista.Csrf(http)}<h2>{(selected is null ? "Nueva cuenta" : "Administrar cuenta")}</h2>
+            <div class=grid>{Vista.Campo("Usuario", "usuario", selected?.UserName, max: 100, atributos: selected is null ? "required autocomplete=off" : "readonly")}
+            {(currentRoles.Contains("Administrador") ? "<p>Perfil Administrador</p>" : $"<label>Perfil<select name=perfil>{options}</select></label>")}
             {Vista.Campo("Contraseña nueva", "clave", tipo: "password", max: 256, atributos: "autocomplete=new-password")}
             {Vista.Campo("Motivo o folio", "motivo", max: 300)}</div>
-            <div class=actions><button name=accion value=crear>Crear</button><button name=accion value=perfil>Cambiar perfil</button>
-            <button name=accion value=desbloquear>Desbloquear</button><button name=accion value=clave>Restablecer contraseña</button></div></form></div>
+            <div class=actions>{(selected is null ? "<button name=accion value=crear>Crear cuenta</button>" :
+                (currentRoles.Contains("Administrador") ? "" : "<button name=accion value=perfil>Cambiar perfil</button>") +
+                "<button name=accion value=desbloquear>Desbloquear</button><button name=accion value=clave>Restablecer contraseña</button>")}</div></form></div>
             <section class=panel><h2>Bitácora reciente</h2><ul>{audit}</ul></section>
             """);
     }
 
-    private static async Task<IResult> Administrar(HttpContext http, UserManager<IdentityUser> users, RegistroDb db)
+    private static async Task<IResult> Administrar(HttpContext http, UserManager<IdentityUser> users, RoleManager<IdentityRole> roles, RegistroDb db)
     {
         var form = await http.Request.ReadFormAsync();
         string name = form["usuario"].ToString().Trim(), role = form["perfil"].ToString(), action = form["accion"].ToString();
         string reason = form["motivo"].ToString().Trim(), password = form["clave"].ToString();
         IResult Fail(string message) => Vista.Pagina(http, "Operación rechazada",
             $"<p class=alert>{Vista.E(message)}</p><a href=/usuarios>Volver a usuarios</a>", 400);
-        if (name.Length is 0 or > 100 || role is not ("Consulta" or "Captura") || password.Length > 256 ||
+        if (name.Length is 0 or > 100 || password.Length > 256 ||
             (action is "desbloquear" or "clave" && reason.Length is < 5 or > 300))
             return Fail("Verifica los datos. Para desbloquear o cambiar contraseña indica un motivo de 5 a 300 caracteres.");
 
         await using var transaction = await db.Database.BeginTransactionAsync();
+        await Perfiles.BloquearEdicion(db);
+        if (action is "crear" or "perfil")
+        {
+            var profile = await roles.FindByNameAsync(role);
+            if (string.IsNullOrEmpty(profile?.Name) || profile.Name == "Administrador")
+                return Fail("Selecciona un perfil operativo existente.");
+            role = profile.Name;
+        }
         await BloquearOperacion(db, users.NormalizeName(name)!);
         var account = await users.FindByNameAsync(name);
         IdentityResult result;
@@ -240,6 +255,6 @@ public static class Acceso
         }, action is "desbloquear" or "clave" ? $"{name} · {reason}" : $"{name} · {role}");
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
-        return Results.Redirect("/usuarios");
+        return Results.Redirect($"/usuarios?id={Uri.EscapeDataString(account.Id)}");
     }
 }

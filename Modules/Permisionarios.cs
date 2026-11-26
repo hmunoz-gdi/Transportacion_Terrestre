@@ -12,15 +12,15 @@ public static class Permisionarios
     {
         var catalog = JsonSerializer.Deserialize<Domicilio[]>(File.ReadAllText(
             Path.Combine(app.Environment.ContentRootPath, "domicilios.json"))) ?? [];
-        var group = app.MapGroup("/permisionarios").RequireAuthorization("Consulta");
+        var group = app.MapGroup("/permisionarios").RequireAuthorization("Permisionarios.Consultar");
         group.MapGet("", Buscar);
         group.MapGet("/catalogo-domicilios", () => Results.Json(catalog));
-        group.MapGet("/nuevo", (HttpContext http) => Ficha(http, new Permisionario(), true)).RequireAuthorization("Captura");
+        group.MapGet("/nuevo", (HttpContext http) => Ficha(http, new Permisionario(), true)).RequireAuthorization("Permisionarios.Cambiar");
         group.MapGet("/{id:long}", async (long id, HttpContext http, RegistroDb db) =>
         {
             var row = await db.Permisionarios.FindAsync(id);
             return row is null ? Results.NotFound() : Ficha(http, row,
-                row.Baja is null && (http.User.IsInRole("Captura") || http.User.IsInRole("Administrador")));
+                row.Baja is null && Perfiles.Puede(http.User, "Permisionarios.Cambiar"));
         });
         group.MapPost("/{id:long}", async (long id, HttpContext http, RegistroDb db) =>
         {
@@ -62,7 +62,7 @@ public static class Permisionarios
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
             return Results.Redirect($"/permisionarios/{row.Id}");
-        }).RequireAuthorization("Captura");
+        }).RequireAuthorization("Permisionarios.Cambiar");
 
         group.MapPost("/{id:long}/baja", async (long id, HttpContext http, RegistroDb db) =>
         {
@@ -78,7 +78,7 @@ public static class Permisionarios
             }
             await transaction.CommitAsync();
             return Results.Redirect($"/permisionarios/{id}");
-        }).RequireAuthorization("Captura");
+        }).RequireAuthorization("Permisionarios.Cambiar");
     }
 
     private static async Task<IResult> Buscar(HttpContext http, RegistroDb db, string? q)
@@ -98,7 +98,7 @@ public static class Permisionarios
             <strong>{Vista.E($"{row.Nombre} {row.Paterno} {row.Materno}")}</strong></div>
             <div class=actions><span class=badge>{(row.Baja is null ? "Activo" : "Baja")}</span><a href=/permisionarios/{row.Id}>Abrir ficha</a></div></article>
             """));
-        string add = http.User.IsInRole("Consulta") && !http.User.IsInRole("Captura") && !http.User.IsInRole("Administrador")
+        string add = !Perfiles.Puede(http.User, "Permisionarios.Cambiar")
             ? "" : "<a class=button href=/permisionarios/nuevo>Nuevo permisionario</a>";
         return Vista.Pagina(http, "Permisionarios", $"""
             <form class=panel><div class=grid>{Vista.Campo("Número económico o nombre", "q", q, "search")}</div>
@@ -109,7 +109,16 @@ public static class Permisionarios
 
     private static IResult Ficha(HttpContext http, Permisionario row, bool edit, string error = "")
     {
-        string link = row.Id == 0 ? "" : $"<a class=button href=/permisionarios/{row.Id}/documentos>Documentos e historial</a><a href=/permisionarios/{row.Id}/taxistas>Taxistas</a><a href=/permisionarios/{row.Id}/unidades>Unidades</a>";
+        string link = "";
+        if (row.Id > 0)
+        {
+            if (Perfiles.Puede(http.User, "Documentos.Consultar"))
+                link += $"<a href=/permisionarios/{row.Id}/documentos>Documentos e historial</a>";
+            if (Perfiles.Puede(http.User, "Taxistas.Consultar"))
+                link += $"<a href=/permisionarios/{row.Id}/taxistas>Taxistas</a>";
+            if (Perfiles.Puede(http.User, "Unidades.Consultar"))
+                link += $"<a href=/permisionarios/{row.Id}/unidades>Unidades</a>";
+        }
         string attr = edit ? "" : "readonly";
         string Address(string label, string key, string value, string extra = "") =>
             edit ? $"<label>{label}<select name={key} data-value='{Vista.E(value)}' {extra}></select></label>"

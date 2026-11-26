@@ -52,9 +52,9 @@ public static class Documentos
 
     public static void Mapear(WebApplication app)
     {
-        var group = app.MapGroup("/permisionarios/{id:long}/documentos").RequireAuthorization("Consulta");
+        var group = app.MapGroup("/permisionarios/{id:long}/documentos").RequireAuthorization("Documentos.Consultar");
         group.MapGet("", Panel);
-        group.MapPost("", Subir).RequireAuthorization("Captura");
+        group.MapPost("", Subir).RequireAuthorization("Documentos.Cambiar");
         group.MapGet("/{version:long}", Abrir);
     }
 
@@ -74,7 +74,7 @@ public static class Documentos
         string current = versions.Count == 0 ? "<p>Sin PDF cargado.</p>" : Link(versions[0]);
         string history = versions.Count < 2 ? "<p>Sin versiones anteriores.</p>" :
             "<ul>" + string.Concat(versions.Skip(1).Select(row => $"<li>{Link(row)}</li>")) + "</ul>";
-        string upload = holder.Baja is null && (http.User.IsInRole("Captura") || http.User.IsInRole("Administrador"))
+        string upload = holder.Baja is null && Perfiles.Puede(http.User, "Documentos.Cambiar")
             ? $"""
                 <form class=panel method=post enctype=multipart/form-data>{Vista.Csrf(http)}<h2>Cargar una versión</h2>
                 <input type=hidden name=tipo value='{selected}'>

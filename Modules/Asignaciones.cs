@@ -9,10 +9,11 @@ public static class Asignaciones
     {
         foreach (string type in new[] { "taxistas", "unidades" })
         {
-            var group = app.MapGroup($"/permisionarios/{{id:long}}/{type}").RequireAuthorization("Consulta");
+            string module = type == "taxistas" ? "Taxistas" : "Unidades";
+            var group = app.MapGroup($"/permisionarios/{{id:long}}/{type}").RequireAuthorization(module + ".Consultar");
             group.MapGet("", (long id, HttpContext http, RegistroDb db) => Panel(id, type, http, db));
             group.MapPost("", (long id, HttpContext http, RegistroDb db) => Alta(id, type, http, db))
-                .RequireAuthorization("Captura");
+                .RequireAuthorization(module + ".Cambiar");
         }
     }
 
@@ -27,7 +28,7 @@ public static class Asignaciones
             <article class=panel><strong>{Vista.E(row.Nombre)}</strong>
             <small>{(drivers ? "Licencia" : "Placa")} {Vista.E(row.Referencia)}{(row.Vigencia is DateOnly date ? $" · Vigencia {date:dd/MM/yyyy}" : "")}</small></article>
             """));
-        string form = holder.Baja is null && (http.User.IsInRole("Captura") || http.User.IsInRole("Administrador")) ?
+        string form = holder.Baja is null && Perfiles.Puede(http.User, drivers ? "Taxistas.Cambiar" : "Unidades.Cambiar") ?
             $"""
             <form method=post class=panel>{Vista.Csrf(http)}<h2>{(drivers ? "Registrar taxista" : "Registrar unidad")}</h2>
             <div class=grid>

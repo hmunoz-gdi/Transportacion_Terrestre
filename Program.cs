@@ -22,10 +22,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
 });
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("Consulta", policy => policy.RequireRole("Consulta", "Captura", "Administrador"))
-    .AddPolicy("Captura", policy => policy.RequireRole("Captura", "Administrador"))
-    .AddPolicy("Admin", policy => policy.RequireRole("Administrador"));
+Perfiles.Configurar(builder);
 builder.Services.AddAntiforgery();
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
     options.MultipartBodyLengthLimit = 26 * 1024 * 1024);
@@ -74,6 +71,7 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/", () => Results.Redirect("/permisionarios"));
 app.MapGet("/denegado", (HttpContext http) => Vista.Pagina(http, "Acceso denegado", "<p>Tu perfil no tiene permiso para esta operación.</p>"));
 Acceso.Mapear(app);
+Perfiles.Mapear(app);
 Permisionarios.Mapear(app);
 Documentos.Mapear(app);
 Asignaciones.Mapear(app);
