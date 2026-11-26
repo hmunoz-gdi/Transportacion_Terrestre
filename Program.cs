@@ -76,4 +76,5 @@ Perfiles.Mapear(app);
 Permisionarios.Mapear(app);
 Documentos.Mapear(app);
 Asignaciones.Mapear(app);
+Reportes.Mapear(app);
 app.Run();

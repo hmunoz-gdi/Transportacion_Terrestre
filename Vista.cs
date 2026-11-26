@@ -34,11 +34,13 @@ public static class Vista
                 ? Link("/operadores", "Operadores", operators) : "";
             string units = Perfiles.Puede(http.User, "Unidades.Consultar")
                 ? Link("/unidades", "Unidad Vehicular", vehicles) : "";
+            string reports = Perfiles.Puede(http.User, "Reportes.Consultar")
+                ? Link("/reportes", "Reportes", path.StartsWithSegments("/reportes")) : "";
             string admin = http.User.IsInRole("Administrador")
                 ? Link("/usuarios", "Usuarios", path.StartsWithSegments("/usuarios") || path.StartsWithSegments("/perfiles")) : "";
             navegacion = $"""
                 <aside class=app-sidebar><nav aria-label="Menú principal">
-                {records}{drivers}{units}{admin}
+                {records}{drivers}{units}{reports}{admin}
                 <form method=post action=/salir>{Csrf(http)}<button class=quiet>Salir</button></form>
                 </nav></aside>
                 """;

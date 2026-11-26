@@ -45,3 +45,9 @@
 .history-data{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:5px 16px;margin-bottom:0;overflow-wrap:anywhere}
 .history-data dt{font-weight:600}
 .history-data dd{margin:0;white-space:pre-wrap}
+.report-ranges{margin-top:16px}
+.report-ranges fieldset{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,135px),1fr));gap:10px;min-width:0;border:1px solid var(--border);border-radius:8px}
+.report-ranges legend{font-weight:650}
+.report-table{overflow-x:auto}
+.report-table table{width:100%;border-collapse:collapse;text-align:left}
+.report-table th,.report-table td{border-bottom:1px solid var(--border);vertical-align:top;padding:8px 11px}

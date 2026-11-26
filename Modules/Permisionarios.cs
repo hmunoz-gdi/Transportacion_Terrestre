@@ -8,7 +8,7 @@ namespace Transportacion;
 
 public static class Permisionarios
 {
-    private static readonly string[] Agrupaciones =
+    internal static readonly string[] Agrupaciones =
     [
         "NUEVA IMAGEN", "PORTO TAXI", "YELLOW CAB", "SITIO 300", "AERO TAXI", "TAXI RIDE",
         "T & M MOVILIDAD", "CONFORT UNLIMITED", "MARIA GUADALUPE ESPINOSA MARTINEZ", "PRHO TAXI", "PSTA PLUS"

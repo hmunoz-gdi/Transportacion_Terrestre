@@ -63,6 +63,12 @@ Las bajas de operadores y unidades conservan la ficha, su fotografía y el histo
 
 Al aplicar la migración, la aplicación guarda una copia inicial de los registros existentes e interpreta como bajas las fechas de baja de operadores que ya se cumplieron. Las versiones sustituidas antes de la actualización se pueden recuperar solo si existen en un respaldo anterior.
 
+## Reportes
+
+Desde el menú lateral **Reportes**, filtra por número económico, agrupación, módulo, estado y rangos inclusivos de alta y baja. Todos los filtros llenados se combinan. Las fechas se presentan en hora de Ciudad de México. Para operadores, se usa la fecha de alta capturada en su ficha cuando está disponible. Para los demás registros se usa el evento de alta del historial. Los registros anteriores sin fecha de alta conocida se muestran como **Sin fecha registrada**.
+
+Los perfiles personalizados requieren **Reportes → Consultar** y el permiso de consulta del módulo cuyos datos se mostrarán.
+
 ## Reglas de captura
 
 En fichas de padrón, **Enter** mueve el foco al siguiente campo. En observaciones, **Mayús+Enter** inserta un salto de línea. Los datos de texto del padrón se guardan en mayúsculas. Los teléfonos y correos son opcionales. Los correos se capturan, guardan y muestran con su escritura original.

@@ -22,7 +22,8 @@ public static class Perfiles
         user.HasClaim(ClaimType, permission);
 
     private static IEnumerable<string> Permisos() =>
-        Modules.SelectMany(module => new[] { module.Key + ".Consultar", module.Key + ".Cambiar" });
+        Modules.SelectMany(module => new[] { module.Key + ".Consultar", module.Key + ".Cambiar" })
+            .Append("Reportes.Consultar");
 
     public static void Configurar(WebApplicationBuilder builder)
     {
@@ -75,6 +76,7 @@ public static class Perfiles
             {(selected is null ? Vista.Campo("Nombre del perfil", "nombre", max: 60, atributos: "required") : "")}
             <p class=hint>Los permisos de carga y edición incluyen consulta. Los módulos de la ficha requieren consultar Permisionarios.</p>
             <details class=permission-tree open><summary>Transportación Terrestre</summary><ul>{tree}
+            <li><details open><summary>Reportes</summary><div class=checks>{Check("Reportes.Consultar", "Consultar")}</div></details></li>
             {(selected?.Name == "Administrador" ? "<li>Usuarios, perfiles y bitácora</li>" : "")}</ul></details>
             {(locked ? "<p>Perfil del sistema.</p>" : "<div class=actions><button>Guardar perfil</button></div>")}
             </form></div>
