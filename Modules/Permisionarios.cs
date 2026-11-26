@@ -96,11 +96,13 @@ public static class Permisionarios
                 error += " Selecciona una agrupación de la lista.";
             if (row.Rfc.Length > 0 && !RfcValido.IsMatch(row.Rfc))
                 error += " El RFC debe tener 13 caracteres para persona física o 12 para persona moral, incluido el sufijo fiscal.";
-            if (phones.Length > 10 || phones.Any(phone => !TelefonoValido.IsMatch(phone)))
-                error += " Captura hasta 10 teléfonos de exactamente 10 dígitos cada uno, sin espacios.";
+            if (phones.Length > 10) error += " El máximo es de 10 teléfonos.";
+            if (phones.Any(phone => !TelefonoValido.IsMatch(phone)))
+                error += " Corrige o quita los teléfonos que no tengan exactamente 10 dígitos.";
             var emailAddress = new EmailAddressAttribute();
-            if (mails.Length > 10 || mails.Any(mail => mail.Length > 254 || !CorreoValido.IsMatch(mail) || !emailAddress.IsValid(mail)))
-                error += " Captura hasta 10 correos válidos de un máximo de 254 caracteres cada uno.";
+            if (mails.Length > 10) error += " El máximo es de 10 correos.";
+            if (mails.Any(mail => mail.Length > 254 || !CorreoValido.IsMatch(mail) || !emailAddress.IsValid(mail)))
+                error += " Corrige o quita las direcciones de correo con formato inválido.";
             if (row.Permiso.Length > 0 && !PermisoValido.IsMatch(row.Permiso))
                 error += " El número de permiso admite hasta 50 letras, dígitos, espacios, puntos, diagonales o guiones.";
             if (row.Calle.Length > 150 || row.Calle.Any(char.IsControl) ||
@@ -226,7 +228,7 @@ public static class Permisionarios
             {Address("Colonia", "colonia", row.Colonia)}
             {Address("Código postal", "cp", row.Cp)}
             {Vista.Campo("Calle", "calle", row.Calle, atributos: attr)}
-            </div><h2 class=actions>Contacto y observaciones</h2><div class=grid>
+            </div><h2 class=actions>Contacto y observaciones</h2><p class=hint>El teléfono y el correo son opcionales.</p><div class=grid>
             {Cuadricula("telefonos", "Teléfono", row.Telefonos, edit, true, phones)}
             {Cuadricula("correos", "Correo", row.Correos, edit, false, mails)}
             <label class=wide>Observaciones<textarea name=observaciones maxlength=1000 {attr}>{Vista.E(row.Observaciones)}</textarea></label></div>

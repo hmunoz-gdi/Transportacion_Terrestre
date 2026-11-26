@@ -57,7 +57,7 @@ Escribe y confirma la contraseña nueva. La terminal oculta lo que tecleas. El c
 
 ## Reglas de captura
 
-En fichas de padrón, **Enter** mueve el foco al siguiente campo. En observaciones, **Mayús+Enter** inserta un salto de línea. Los datos de texto del padrón se guardan en mayúsculas. Los correos se muestran en mayúsculas y conservan su escritura original para poder usarlos como se capturaron.
+En fichas de padrón, **Enter** mueve el foco al siguiente campo. En observaciones, **Mayús+Enter** inserta un salto de línea. Los datos de texto del padrón se guardan en mayúsculas. Los teléfonos y correos son opcionales. Los correos se capturan, guardan y muestran con su escritura original.
 
 | Campo de Permisionarios | Tipo y longitud |
 |---|---|

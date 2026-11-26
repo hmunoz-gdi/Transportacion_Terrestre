@@ -35,6 +35,10 @@ public static class Asignaciones
 
     public static void Mapear(WebApplication app)
     {
+        app.MapGet("/operadores", (HttpContext http, RegistroDb db, string? q) => Indice("taxistas", http, db, q))
+            .RequireAuthorization("Taxistas.Consultar");
+        app.MapGet("/unidades", (HttpContext http, RegistroDb db, string? q) => Indice("unidades", http, db, q))
+            .RequireAuthorization("Unidades.Consultar");
         foreach (string route in new[] { "operadores", "unidades", "taxistas" })
         {
             string type = route == "unidades" ? "unidades" : "taxistas";
@@ -50,6 +54,47 @@ public static class Asignaciones
             Fotografias.Mapear(group, module, type);
         }
     }
+
+    private static async Task<IResult> Indice(string type, HttpContext http, RegistroDb db, string? q)
+    {
+        bool drivers = type == "taxistas";
+        string title = drivers ? "Operadores" : "Unidad Vehicular";
+        string route = drivers ? "/operadores" : "/unidades";
+        q = q?.Trim();
+        if (q?.Length > 150) return Results.BadRequest("La búsqueda excede 150 caracteres.");
+        string pattern = Patron(q ?? "");
+        var matches = await db.Asignaciones.FromSqlInterpolated($"""
+            SELECT a.* FROM "Asignaciones" a
+            JOIN "Permisionarios" p ON p."Id" = a."PermisionarioId"
+            WHERE a."Tipo" = {type}
+              AND (concat_ws(' ', a."Detalles"->>'marca', a."Nombre", a."Detalles"->>'paterno', a."Detalles"->>'materno') ILIKE {pattern}
+              OR a."Referencia" ILIKE {pattern} OR p."Economico" ILIKE {pattern}
+              OR concat_ws(' ', p."Nombre", p."Paterno", p."Materno") ILIKE {pattern})
+            """).OrderBy(row => row.Nombre).ThenBy(row => row.Id).Take(100).ToListAsync();
+        var holderIds = matches.Select(match => match.PermisionarioId).Distinct().ToArray();
+        var holders = await db.Permisionarios.Where(row => holderIds.Contains(row.Id)).ToDictionaryAsync(row => row.Id);
+        string results = string.Concat(matches.Select(row =>
+        {
+            var holder = holders[row.PermisionarioId];
+            return $"""
+                <li><a href='{Ruta(holder.Id, type)}/{row.Id}'>{Vista.E(Permisionarios.Mayusculas(NombreVisible(row, drivers)))}</a>
+                <small>{Vista.E(Permisionarios.Mayusculas(row.Referencia))} · {Vista.E(Permisionarios.Mayusculas(holder.Economico))}
+                · {Vista.E(Permisionarios.Mayusculas($"{holder.Nombre} {holder.Paterno} {holder.Materno}"))}</small></li>
+                """;
+        }));
+        string add = Perfiles.Puede(http.User, drivers ? "Taxistas.Cambiar" : "Unidades.Cambiar")
+            ? "<a href=/permisionarios>Buscar permisionario para registrar</a>" : "";
+        return Vista.Pagina(http, title, $"""
+            <form class=panel method=get action='{route}'>
+            {Vista.Campo(drivers ? "Operador, licencia o permisionario" : "Unidad, placa o permisionario", "q", q, "search")}
+            <div class=actions><button>Buscar</button>{add}</div></form>
+            <section class=panel aria-label="Resultados">
+            {(matches.Count > 0 ? $"<ul class=assignment-list>{results}</ul>" : "<p>Sin coincidencias.</p>")}</section>
+            """);
+    }
+
+    private static string Patron(string query) =>
+        "%" + query.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
 
     private static string Ruta(long id, string type) =>
         $"/permisionarios/{id}/{(type == "taxistas" ? "operadores" : "unidades")}";

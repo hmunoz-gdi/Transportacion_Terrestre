@@ -20,7 +20,7 @@
 
 .ficha-layout{display:grid;grid-template-columns:minmax(0,2.7fr) minmax(210px,1fr);gap:16px;align-items:start}
 .ficha-layout aside{min-width:0}
-.datos-padron input:not([type=file]),.datos-padron select,.datos-padron textarea,.contactos td:first-child{text-transform:uppercase}
+.datos-padron input:not([type=file]):not([type=email]),.datos-padron select,.datos-padron textarea{text-transform:uppercase}
 .datos-padron .grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
 .contactos{min-width:0}
 .contactos table{width:100%;border-collapse:collapse;margin-bottom:8px;table-layout:auto}
@@ -32,3 +32,13 @@
 .contact-status{margin:5px 0;color:#476157}
 .sr-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 @media(max-width:720px){.ficha-layout{grid-template-columns:1fr}}
+
+
+.app-layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100svh - 77px)}
+.app-layout main{width:100%;min-width:0;margin:0 auto}
+.app-sidebar{background:#fff;border-right:1px solid var(--border);padding:20px 14px}
+.app-sidebar nav{display:grid;gap:6px;align-content:start}
+.app-sidebar nav a{padding:9px 12px;border-radius:8px;text-decoration:none}
+.app-sidebar nav a:hover,.app-sidebar nav a[aria-current=page]{background:#dff0e7}
+.app-sidebar nav form{margin-top:10px;padding:0 12px}
+@media(max-width:720px){.app-layout{grid-template-columns:minmax(0,1fr)}.app-sidebar{border-right:0;border-bottom:1px solid var(--border);padding:10px 14px}.app-sidebar nav{display:flex;gap:4px}.app-sidebar nav form{margin:0;padding:0}}
