@@ -1,4 +1,5 @@
 using System.Globalization;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,6 +37,7 @@ public static class Reportes
         var query = http.Request.Query;
         string Leer(string key) => query[key].ToString().Trim();
         string economic = Leer("economico"), group = Leer("agrupacion"), status = Leer("estado"), module = Leer("modulo");
+        bool excel = Leer("formato") == "xlsx";
         string altaDesde = Leer("altaDesde"), altaHasta = Leer("altaHasta"), bajaDesde = Leer("bajaDesde"), bajaHasta = Leer("bajaHasta");
         var allowed = Modulos.Where(item => Perfiles.Puede(http.User, item.Permission)).ToArray();
         if (allowed.Length == 0 || (module.Length != 0 && !allowed.Any(item => item.Key == module)))
@@ -58,12 +60,9 @@ public static class Reportes
         error |= firstAlta > lastAlta || firstBaja > lastBaja;
         int page = 1;
         string rawPage = Leer("pagina");
-        if (rawPage.Length > 0 && (!int.TryParse(rawPage, out page) || page is < 1 or > (int.MaxValue / Pagina)))
+        if (!excel && rawPage.Length > 0 && (!int.TryParse(rawPage, out page) || page is < 1 or > (int.MaxValue / Pagina)))
             error = true;
 
-        var availableGroups = (await db.Permisionarios.Select(row => row.Agrupacion).Distinct().ToListAsync(token))
-            .Select(Permisionarios.Mayusculas).Concat(Permisionarios.Agrupaciones).Where(name => name.Length > 0)
-            .Distinct().Order(StringComparer.Create(CultureInfo.GetCultureInfo("es-MX"), false));
         var rows = new List<Fila>();
         if (!error)
         {
@@ -115,9 +114,14 @@ public static class Reportes
             if (lastAlta is DateOnly a2) data = data.Where(row => row.Alta <= a2);
             if (firstBaja is DateOnly b1) data = data.Where(row => row.Baja >= b1);
             if (lastBaja is DateOnly b2) data = data.Where(row => row.Baja <= b2);
-            rows = await data.OrderBy(row => row.Economico).ThenBy(row => row.Tipo).ThenBy(row => row.Id)
-                .Skip((page - 1) * Pagina).Take(Pagina + 1).ToListAsync(token);
+            var ordered = data.OrderBy(row => row.Economico).ThenBy(row => row.Tipo).ThenBy(row => row.Id);
+            if (excel) return await Exportar(ordered.AsAsyncEnumerable(), token);
+            rows = await ordered.Skip((page - 1) * Pagina).Take(Pagina + 1).ToListAsync(token);
         }
+
+        var availableGroups = (await db.Permisionarios.Select(row => row.Agrupacion).Distinct().ToListAsync(token))
+            .Select(Permisionarios.Mayusculas).Concat(Permisionarios.Agrupaciones).Where(name => name.Length > 0)
+            .Distinct().Order(StringComparer.Create(CultureInfo.GetCultureInfo("es-MX"), false));
 
         string Option(string value, string label, string selected) =>
             $"<option value='{Vista.E(value)}' {(value == selected ? "selected" : "")}>{Vista.E(label)}</option>";
@@ -173,9 +177,90 @@ public static class Reportes
             <fieldset><legend>Fecha de alta</legend>{Vista.Campo("Desde", "altaDesde", altaDesde, "date")}{Vista.Campo("Hasta", "altaHasta", altaHasta, "date")}</fieldset>
             <fieldset><legend>Fecha de baja</legend>{Vista.Campo("Desde", "bajaDesde", bajaDesde, "date")}{Vista.Campo("Hasta", "bajaHasta", bajaHasta, "date")}</fieldset>
             </div>
-            <div class=actions><button>Consultar</button><a href=/reportes>Limpiar filtros</a></div></form>
+            <div class=actions><button>Consultar</button>
+            <button class=quiet name=formato value=xlsx>Exportar a Excel</button>
+            <a href=/reportes>Limpiar filtros</a></div></form>
             {(error ? "<p class=alert role=alert>Revisa los filtros y asegúrate de que cada fecha «Desde» sea anterior o igual a «Hasta».</p>"
                 : $"<section class=panel><h2>Resultados</h2>{Resultados()}{pagination}</section>")}
             """, error ? 400 : 200);
+    }
+
+    private static async Task<IResult> Exportar(IAsyncEnumerable<Fila> rows, CancellationToken token)
+    {
+        using var workbook = new XLWorkbook();
+        string[] headers = ["Económico", "Agrupación", "Permisionario", "Módulo", "Registro", "Referencia", "Alta", "Baja", "Estado"];
+        double[] widths = [16, 32, 36, 22, 36, 22, 24, 15, 13];
+        int sheetNumber = 0;
+
+        IXLWorksheet CrearHoja()
+        {
+            sheetNumber++;
+            var worksheet = workbook.Worksheets.Add(sheetNumber == 1 ? "Reporte" : $"Reporte {sheetNumber}");
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Column(i + 1).Width = widths[i];
+            }
+            var header = worksheet.Range(1, 1, 1, headers.Length);
+            header.Style.Font.Bold = true;
+            header.Style.Fill.BackgroundColor = XLColor.FromHtml("#DBEEE4");
+            worksheet.SheetView.FreezeRows(1);
+            return worksheet;
+        }
+
+        var sheet = CrearHoja();
+        int number = 1;
+        await foreach (var row in rows.WithCancellation(token))
+        {
+            if (number == 1_048_576)
+            {
+                sheet.Range(1, 1, number, headers.Length).SetAutoFilter();
+                sheet = CrearHoja();
+                number = 1;
+            }
+            number++;
+            // Excel receives identifiers and user text as text cells, including leading zeroes.
+            sheet.Cell(number, 1).Value = row.Economico;
+            sheet.Cell(number, 2).Value = row.Agrupacion;
+            sheet.Cell(number, 3).Value = row.Titular.Trim();
+            sheet.Cell(number, 4).Value = Modulos.First(item => item.Key == row.Tipo).Label;
+            sheet.Cell(number, 5).Value = row.Registro.Trim();
+            sheet.Cell(number, 6).Value = row.Referencia;
+            EscribirFecha(sheet.Cell(number, 7), row.Alta, "Sin fecha registrada");
+            EscribirFecha(sheet.Cell(number, 8), row.Baja, "");
+            sheet.Cell(number, 9).Value = row.Baja is null ? "Activo" : "Baja";
+        }
+        sheet.Range(1, 1, number, headers.Length).SetAutoFilter();
+
+        token.ThrowIfCancellationRequested();
+        var file = new MemoryStream();
+        try
+        {
+            workbook.SaveAs(file);
+            file.Position = 0;
+            return Results.File(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "reporte-transportacion.xlsx");
+        }
+        catch
+        {
+            file.Dispose();
+            throw;
+        }
+    }
+
+    private static void EscribirFecha(IXLCell cell, DateOnly? date, string missing)
+    {
+        if (date is not DateOnly value)
+        {
+            if (missing.Length > 0) cell.Value = missing;
+            return;
+        }
+        if (value.Year < 1900)
+        {
+            cell.Value = value.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+            return;
+        }
+        cell.Value = value.ToDateTime(TimeOnly.MinValue);
+        cell.Style.DateFormat.Format = "dd/mm/yyyy";
     }
 }
