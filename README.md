@@ -26,6 +26,14 @@ dotnet user-secrets remove "Inicial:Usuario"
 
 En servidor configura HTTPS y proporciona `ConnectionStrings__Transportacion` y `Documentos__Raiz` mediante la configuración del servicio. Usa una ruta absoluta privada fuera de `wwwroot`, local o UNC, con acceso para la cuenta que ejecuta ASP.NET Core. Respalda la base y esa carpeta de forma coordinada. Una carga con fallo después de escribir el archivo puede dejar un archivo huérfano, que debe reconciliarse con las claves registradas antes de limpiar el repositorio.
 
+## Crear la base y el esquema desde pgAdmin
+
+1. Abre **Query Tool** en la base de mantenimiento `postgres` con una cuenta que pueda crear bases. Abre y ejecuta `database/01-crear-base.sql` con autocommit habilitado. Si `transportacion_terrestre` ya existe, omite este paso.
+2. Actualiza el árbol de bases y abre **otro Query Tool** en `transportacion_terrestre`. En una instalación nueva, abre y ejecuta `database/02-crear-esquema.sql`. Usa la cuenta de la aplicación para que sea propietaria de las tablas o concede a esa cuenta los permisos correspondientes.
+3. Completa la configuración de conexión y del administrador inicial descrita arriba. La instalación registra la migración de Entity Framework, y el primer arranque crea los perfiles y la cuenta inicial de la aplicación.
+
+El segundo script se genera desde las migraciones del proyecto para PostgreSQL. La carpeta de PDF se configura por separado al arrancar la aplicación.
+
 ## Primera versión
 
 - Permisionarios con búsqueda, alta, edición, baja lógica, datos de contacto y domicilio. Las rutas de edición usan el ID de la ficha.
