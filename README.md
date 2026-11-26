@@ -34,6 +34,17 @@ En servidor configura HTTPS y proporciona `ConnectionStrings__Transportacion` y 
 
 El segundo script se genera desde las migraciones del proyecto para PostgreSQL. La carpeta de PDF se configura por separado al arrancar la aplicación.
 
+## Recuperar el acceso de administrador
+
+Desde la carpeta del proyecto, con la misma configuración de conexión del arranque, ejecuta en una terminal interactiva:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+dotnet run -- restablecer-admin admin.transportacion
+```
+
+Escribe y confirma la contraseña nueva. La terminal oculta lo que tecleas. El comando requiere acceso a la base, opera sobre una cuenta con perfil Administrador, desbloquea la cuenta y deja un registro en la bitácora.
+
 ## Primera versión
 
 - Permisionarios con búsqueda, alta, edición, baja lógica, datos de contacto y domicilio. Las rutas de edición usan el ID de la ficha.

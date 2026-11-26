@@ -25,6 +25,73 @@ public static class Acceso
         await transaction.CommitAsync();
     }
 
+    public static async Task<int> RestablecerAdmin(IServiceProvider services, string name)
+    {
+        if (Console.IsInputRedirected)
+        {
+            Console.Error.WriteLine("Ejecuta el comando en una terminal interactiva.");
+            return 1;
+        }
+
+        var db = services.GetRequiredService<RegistroDb>();
+        var users = services.GetRequiredService<UserManager<IdentityUser>>();
+        Console.Write("Nueva contraseña: ");
+        string password = LeerClave();
+        Console.Write("Confirma la contraseña: ");
+        if (password != LeerClave())
+        {
+            Console.Error.WriteLine("Las contraseñas son distintas.");
+            return 1;
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        await BloquearOperacion(db, users.NormalizeName(name)!);
+        var account = await users.FindByNameAsync(name);
+        if (account is null || !await users.IsInRoleAsync(account, "Administrador"))
+        {
+            Console.Error.WriteLine("La cuenta indicada no tiene el perfil Administrador.");
+            return 1;
+        }
+
+        var token = await users.GeneratePasswordResetTokenAsync(account);
+        var result = await users.ResetPasswordAsync(account, token, password);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors) Console.Error.WriteLine(error.Description);
+            return 1;
+        }
+        Exigir(await users.ResetAccessFailedCountAsync(account));
+        if (account.LockoutEnabled)
+            Exigir(await users.SetLockoutEndDateAsync(account, null));
+
+        db.Eventos.Add(new Evento
+        {
+            Actor = Environment.UserName,
+            Accion = "Recuperación de administrador",
+            Detalle = account.UserName + " · Contraseña restablecida y contador reiniciado"
+        });
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        Console.WriteLine("Contraseña restablecida. Ya puedes iniciar sesión con la nueva clave.");
+        return 0;
+    }
+
+    private static string LeerClave()
+    {
+        var password = new System.Text.StringBuilder();
+        while (true)
+        {
+            var key = Console.ReadKey(intercept: true);
+            if (key.Key == ConsoleKey.Enter) break;
+            if (key.Key == ConsoleKey.Backspace && password.Length > 0)
+                password.Length--;
+            else if (!char.IsControl(key.KeyChar) && password.Length < 256)
+                password.Append(key.KeyChar);
+        }
+        Console.WriteLine();
+        return password.ToString();
+    }
+
     private static void Exigir(IdentityResult result)
     {
         if (!result.Succeeded)
