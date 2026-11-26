@@ -204,13 +204,13 @@ public static class Permisionarios
         string link = "";
         if (row.Id > 0)
         {
-            link = $"<a href=/permisionarios/{row.Id}/historial>Historial de la ficha</a><a class=button href=/permisionarios/{row.Id}/caratula>Carátula</a>";
+            link = $"<a class=button href=/permisionarios/{row.Id}/caratula>Carátula</a><a class=button href=/permisionarios/{row.Id}/historial>Historial de la ficha</a>";
             if (Perfiles.Puede(http.User, "Documentos.Consultar"))
-                link += $"<a href=/permisionarios/{row.Id}/documentos>Documentos e historial</a>";
+                link += $"<a class=button href=/permisionarios/{row.Id}/documentos>Documentos e historial</a>";
             if (Perfiles.Puede(http.User, "Taxistas.Consultar"))
-                link += $"<a href=/permisionarios/{row.Id}/operadores>Operadores</a>";
+                link += $"<a class=button href=/permisionarios/{row.Id}/operadores>Operadores</a>";
             if (Perfiles.Puede(http.User, "Unidades.Consultar"))
-                link += $"<a href=/permisionarios/{row.Id}/unidades>Unidad Vehicular</a>";
+                link += $"<a class=button href=/permisionarios/{row.Id}/unidades>Unidad Vehicular</a>";
         }
         string attr = edit ? "" : "readonly";
         string Address(string label, string key, string value, string extra = "") =>
@@ -243,8 +243,8 @@ public static class Permisionarios
             ? $"<details class=panel><summary>Dar de baja</summary><form method=post action=/permisionarios/{row.Id}/baja>{Vista.Csrf(http)}<p>El expediente se conservará para consulta.</p><button>Confirmar baja</button></form></details>"
             : "";
         string content = edit
-            ? $"<form id=ficha class=\"panel datos-padron\" data-captura method=post action=/permisionarios/{row.Id}>{Vista.Csrf(http)}<input type=hidden name=contactos_en_filas value=1>{fields}<div class=actions><button>Guardar</button>{link}</div></form><script src=/domicilio.js defer></script><script src=/permisionario.js defer></script>"
-            : $"<section class=\"panel datos-padron\">{fields}<div class=actions>{link}</div></section>";
+            ? $"<form id=ficha class=\"panel datos-padron\" data-captura method=post action=/permisionarios/{row.Id}>{Vista.Csrf(http)}<input type=hidden name=contactos_en_filas value=1>{fields}<div class=ficha-acciones role=group aria-label=\"Acciones de la ficha\"><button type=submit>Guardar</button>{link}</div></form><script src=/domicilio.js defer></script><script src=/permisionario.js defer></script>"
+            : $"<section class=\"panel datos-padron\">{fields}<div class=ficha-acciones role=group aria-label=\"Acciones de la ficha\">{link}</div></section>";
         string photo = row.Id > 0
             ? Fotografias.Panel(http, $"/permisionarios/{row.Id}/foto", edit, row.Id)
             : "<section class=panel><h2>Fotografía</h2><p>Guarda primero la ficha para cargar una imagen.</p></section>";

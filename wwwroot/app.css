@@ -51,3 +51,23 @@
 .report-table{overflow-x:auto}
 .report-table table{width:100%;border-collapse:collapse;text-align:left}
 .report-table th,.report-table td{border-bottom:1px solid var(--border);vertical-align:top;padding:8px 11px}
+
+.ficha-acciones{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,max(155px,calc((100% - 20px)/3))),1fr));
+    gap:10px;
+    margin-top:20px;
+    padding-top:16px;
+    border-top:1px solid var(--border);
+}
+.ficha-acciones :is(button,.button){
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:44px;
+    text-align:center;
+}
+.ficha-acciones button:only-child{justify-self:start;min-width:min(100%,140px)}
+.ficha-acciones .button{background:#fff;color:var(--green)}
+.ficha-acciones .button:hover{background:#edf4f0}
+.ficha-acciones button:not(:disabled):hover{background:#104735}
