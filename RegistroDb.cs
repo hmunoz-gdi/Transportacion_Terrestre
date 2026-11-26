@@ -16,6 +16,7 @@ public sealed class RegistroDb(DbContextOptions<RegistroDb> options) : IdentityD
     protected override void OnModelCreating(ModelBuilder model)
     {
         base.OnModelCreating(model);
+        model.Entity<Asignacion>().Property(row => row.Detalles).HasColumnType("jsonb").HasDefaultValue("{}");
         model.Entity<Asignacion>().HasOne<Permisionario>().WithMany().HasForeignKey(row => row.PermisionarioId);
         model.Entity<Permisionario>().HasIndex(row => row.Economico);
         model.Entity<VersionPdf>().HasIndex(row => new { row.PermisionarioId, row.Tipo, row.Numero }).IsUnique();
@@ -74,5 +75,6 @@ public sealed class Asignacion
     public string Tipo { get; set; } = "";
     public string Nombre { get; set; } = "";
     public string Referencia { get; set; } = "";
+    public string Detalles { get; set; } = "{}";
     public DateOnly? Vigencia { get; set; }
 }

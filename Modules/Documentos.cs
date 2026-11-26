@@ -17,6 +17,9 @@ public sealed class RepositorioPdf
         Directory.CreateDirectory(root);
     }
 
+    public string RutaFoto(long id, long? record) =>
+        Path.Combine(root, "fotografias", id.ToString(), (record?.ToString() ?? "permisionario") + ".img");
+
     public string Ruta(long id, Guid key) => Path.Combine(root, id.ToString(), $"{key:N}.pdf");
 
     public async Task Guardar(long id, Guid key, Stream source, CancellationToken cancellation)

@@ -10,8 +10,8 @@ public static class Perfiles
     private static readonly (string Key, string Label, string Action)[] Modules =
     [
         ("Permisionarios", "Permisionarios", "Alta, edición y baja"),
-        ("Taxistas", "Taxistas", "Registrar taxistas"),
-        ("Unidades", "Unidades vehiculares", "Registrar unidades"),
+        ("Taxistas", "Operadores", "Registrar y editar operadores"),
+        ("Unidades", "Unidades vehiculares", "Registrar y editar unidades"),
         ("Documentos", "Documentos e historial", "Cargar versiones PDF")
     ];
 

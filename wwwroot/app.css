@@ -13,3 +13,7 @@
 .check input{width:auto;accent-color:var(--green)}
 .hint{margin-top:12px;color:#476157;font-size:.9rem}
 @media(max-width:670px){.profile-layout{grid-template-columns:1fr}}
+
+.holder{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;background:#dff0e7;border:1px solid var(--border);border-left:6px solid var(--green);border-radius:12px;padding:16px 22px;margin:16px 0}
+.holder h2{margin:0}.holder strong{font-size:1.25rem}.assignment-list{padding-left:20px}.assignment-list li{padding:7px 0}
+.record-photo{display:block;max-width:100%;width:280px;height:220px;object-fit:contain;background:#edf4f0;border-radius:8px;margin-bottom:14px}

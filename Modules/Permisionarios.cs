@@ -6,14 +6,17 @@ namespace Transportacion;
 
 public static class Permisionarios
 {
-    private record Domicilio(string Estado, string Municipio, string Colonia, string Cp);
+    internal record Domicilio(string Estado, string Municipio, string Colonia, string Cp);
+
+    internal static Domicilio[] CargarCatalogo(string root) =>
+        JsonSerializer.Deserialize<Domicilio[]>(File.ReadAllText(Path.Combine(root, "domicilios.json"))) ?? [];
 
     public static void Mapear(WebApplication app)
     {
-        var catalog = JsonSerializer.Deserialize<Domicilio[]>(File.ReadAllText(
-            Path.Combine(app.Environment.ContentRootPath, "domicilios.json"))) ?? [];
+        var catalog = app.Services.GetRequiredService<Domicilio[]>();
         var group = app.MapGroup("/permisionarios").RequireAuthorization("Permisionarios.Consultar");
         group.MapGet("", Buscar);
+        Fotografias.Mapear(group, "Permisionarios");
         group.MapGet("/catalogo-domicilios", () => Results.Json(catalog));
         group.MapGet("/nuevo", (HttpContext http) => Ficha(http, new Permisionario(), true)).RequireAuthorization("Permisionarios.Cambiar");
         group.MapGet("/{id:long}", async (long id, HttpContext http, RegistroDb db) =>
@@ -115,9 +118,9 @@ public static class Permisionarios
             if (Perfiles.Puede(http.User, "Documentos.Consultar"))
                 link += $"<a href=/permisionarios/{row.Id}/documentos>Documentos e historial</a>";
             if (Perfiles.Puede(http.User, "Taxistas.Consultar"))
-                link += $"<a href=/permisionarios/{row.Id}/taxistas>Taxistas</a>";
+                link += $"<a href=/permisionarios/{row.Id}/operadores>Operadores</a>";
             if (Perfiles.Puede(http.User, "Unidades.Consultar"))
-                link += $"<a href=/permisionarios/{row.Id}/unidades>Unidades</a>";
+                link += $"<a href=/permisionarios/{row.Id}/unidades>Unidad Vehicular</a>";
         }
         string attr = edit ? "" : "readonly";
         string Address(string label, string key, string value, string extra = "") =>
@@ -150,6 +153,8 @@ public static class Permisionarios
         string content = edit
             ? $"<form id=ficha class=panel method=post action=/permisionarios/{row.Id}>{Vista.Csrf(http)}{fields}<div class=actions><button>Guardar</button>{link}</div></form><script src=/domicilio.js defer></script>"
             : $"<section class=panel>{fields}<div class=actions>{link}</div></section>";
+        if (row.Id > 0)
+            content += Fotografias.Panel(http, $"/permisionarios/{row.Id}/foto", edit, row.Id);
         return Vista.Pagina(http, row.Id == 0 ? "Nuevo permisionario" : $"Ficha {row.Economico}",
             $"<p><a href=/permisionarios>Volver al catálogo</a></p>{(row.Baja is null ? "" : "<p class=alert>Registro dado de baja.</p>")}<p class=alert role=alert>{Vista.E(error)}</p>{content}{end}", error.Length > 0 ? 400 : 200);
     }

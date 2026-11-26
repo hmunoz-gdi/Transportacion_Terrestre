@@ -34,6 +34,7 @@ if (recuperar)
     return;
 }
 
+builder.Services.AddSingleton(Permisionarios.CargarCatalogo(builder.Environment.ContentRootPath));
 builder.Services.AddSingleton(new RepositorioPdf(builder.Configuration["Documentos:Raiz"]
     ?? throw new InvalidOperationException("Configura Documentos:Raiz."), builder.Environment.WebRootPath));
 

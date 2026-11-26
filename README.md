@@ -48,11 +48,12 @@ Escribe y confirma la contraseña nueva. La terminal oculta lo que tecleas. El c
 ## Primera versión
 
 - Permisionarios con búsqueda, alta, edición, baja lógica, datos de contacto y domicilio. Las rutas de edición usan el ID de la ficha.
-- Taxistas y unidades con registro básico desde una ficha.
+- Operadores y Unidad Vehicular con alta, búsqueda y edición desde la ficha del permisionario. El encabezado muestra el nombre y el número económico del titular.
+- Fotografía en las fichas de permisionario, operador y unidad. La carga admite JPG y PNG de hasta 5 MB después de guardar el registro. Las fotografías se guardan en `fotografias` dentro del repositorio privado y se incluyen en su respaldo.
 - Siete tipos de documentos del formulario SCAN. Vista previa de carga y apertura de versiones históricas. La versión con numeración más alta es la actual. En PostgreSQL se guardan metadatos. Los PDF se escriben en subcarpetas por ficha, con una clave distinta por versión.
 - Usuarios independientes. Consulta puede leer fichas y PDF. Captura puede modificarlos. Administración puede configurar cuentas y consultar la bitácora. Tres intentos fallidos bloquean hasta desbloqueo administrativo. Los cambios de credencial o perfil invalidan sesiones.
 - `domicilios.json` incluye una muestra. Sustituye sus filas por el catálogo autorizado de estado, municipio o alcaldía, colonia y código postal. Cada código postal asociado a una colonia ocupa una fila. Reinicia la aplicación para recargar el catálogo.
-- La base comienza vacía. La importación de SQL Server y los PDF históricos, las cesiones, sustituciones, captura de fotografía y carátula quedan para sus módulos respectivos.
+- La base comienza vacía. La importación de SQL Server y los PDF históricos, las cesiones, sustituciones, captura directa desde cámara y carátula quedan para sus módulos respectivos.
 
 ## Definir perfiles
 
