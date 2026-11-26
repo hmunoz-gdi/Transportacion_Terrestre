@@ -55,6 +55,29 @@ Escribe y confirma la contraseña nueva. La terminal oculta lo que tecleas. El c
 - `domicilios.json` incluye una muestra. Sustituye sus filas por el catálogo autorizado de estado, municipio o alcaldía, colonia y código postal. Cada código postal asociado a una colonia ocupa una fila. Reinicia la aplicación para recargar el catálogo.
 - La base comienza vacía. La importación de SQL Server y los PDF históricos, las cesiones, sustituciones, captura directa desde cámara y carátula quedan para sus módulos respectivos.
 
+## Reglas de captura
+
+En fichas de padrón, **Enter** mueve el foco al siguiente campo. En observaciones, **Mayús+Enter** inserta un salto de línea. Los datos de texto del padrón se guardan en mayúsculas. Los correos se muestran en mayúsculas y conservan su escritura original para poder usarlos como se capturaron.
+
+| Campo de Permisionarios | Tipo y longitud |
+|---|---|
+| Económico | De 1 a 10 letras A–Z, dígitos o guiones. Conserva ceros iniciales. |
+| Nombre y apellidos | Hasta 90 caracteres por campo. Letras con acentos, espacios, puntos, apóstrofos y guiones. El nombre es obligatorio. |
+| Agrupación | Selector de 11 opciones. Una agrupación anterior se conserva si ya estaba registrada en la ficha. |
+| RFC | 13 caracteres para persona física y 12 para persona moral. Prefijo alfabético fiscal, seis dígitos de fecha y tres caracteres alfanuméricos. |
+| Fecha de nacimiento y vigencia | Fecha de calendario. El nacimiento admite fechas hasta el día de captura. |
+| Estado, municipio o alcaldía, colonia y código postal | Catálogo en cascada. El código postal proviene del catálogo. |
+| Calle | Hasta 150 caracteres, incluidos números y signos. |
+| Número de permiso | Hasta 50 letras, dígitos, espacios, punto, diagonal, guion y guion bajo. |
+| Teléfonos | Hasta 10 filas con 10 dígitos ASCII por fila. |
+| Correos | Hasta 10 filas de 254 caracteres por dirección, con formato de correo. |
+| Observaciones | Hasta 1,000 caracteres, con saltos de línea. |
+| Fotografía | Archivo JPG o PNG, hasta 5 MB. Se carga después de guardar la ficha. |
+
+La base de RFC sugerida para persona física utiliza nombre, ambos apellidos y fecha de nacimiento. Es una ayuda de captura. Confirma el RFC completo y el sufijo con la constancia fiscal.
+
+En **Operadores**, nombre, apellidos y campos descriptivos admiten hasta 150 caracteres, licencia hasta 50, CURP hasta 18, código postal de catálogo y observaciones hasta 1,000. En **Unidad Vehicular**, modelo, marca, tipo y referencias documentales admiten hasta 150 caracteres, placa hasta 50 y año de tenencia hasta cuatro. Las vigencias se capturan como fechas y las condiciones de seguro, factura, revista, tenencia y sustitución como casillas.
+
 ## Definir perfiles
 
 En **Usuarios → Definir perfiles**, selecciona **Nuevo perfil**, escribe su nombre y marca las operaciones en el árbol. Luego vuelve a **Usuarios** y asigna el perfil al crear una cuenta o al cambiar una existente.

@@ -25,7 +25,7 @@ public static class Vista
         return Results.Content($"""
             <!doctype html><html lang="es-MX"><head><meta charset=utf-8>
             <meta name=viewport content="width=device-width,initial-scale=1">
-            <title>{E(titulo)} · Transportación Terrestre</title><link rel=stylesheet href=/app.css></head>
+            <title>{E(titulo)} · Transportación Terrestre</title><link rel=stylesheet href=/app.css><script src=/captura.js defer></script></head>
             <body><header><div class=brand><span class=monogram>TT</span><div><strong>Transportación Terrestre</strong><small>Registro y expedientes</small></div></div>{navegacion}</header>
             <main><h1>{E(titulo)}</h1>{contenido}</main></body></html>
             """, "text/html; charset=utf-8", statusCode: status);

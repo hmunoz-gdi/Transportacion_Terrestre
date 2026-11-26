@@ -332,6 +332,9 @@ namespace Transportacion.Migraciones
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateOnly?>("Nacimiento")
+                        .HasColumnType("date");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("text");

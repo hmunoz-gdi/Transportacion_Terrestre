@@ -84,20 +84,20 @@ public static class Asignaciones
         }
         var rows = await query.OrderBy(row => row.Nombre).ThenBy(row => row.Id).Take(100).ToListAsync();
         string list = string.Concat(rows.Select(row =>
-            $"<li><a href={route}/{row.Id}>{Vista.E(NombreVisible(row, drivers))}</a><small>{Vista.E(row.Referencia)}</small></li>"));
+            $"<li><a href={route}/{row.Id}>{Vista.E(Permisionarios.Mayusculas(NombreVisible(row, drivers)))}</a><small>{Vista.E(Permisionarios.Mayusculas(row.Referencia))}</small></li>"));
         string target = registro == 0 ? route : $"{route}/{registro}";
         string form = registro == 0 && !edit ? "" : Formulario(http, current, drivers, edit, target, invalid is not null);
         string photo = registro == 0 ? (edit ? "<p class=hint>Guarda el registro para agregar su fotografía.</p>" : "") : Fotografias.Panel(http, target + "/foto", edit, id, registro);
         return Vista.Pagina(http, title, $"""
             <section class=holder><div><small>Permisionario vinculado</small>
-            <h2>{Vista.E($"{holder.Nombre} {holder.Paterno} {holder.Materno}".Trim())}</h2></div>
-            <div><small>Número económico</small><strong>{Vista.E(holder.Economico)}</strong></div>
+            <h2>{Vista.E(Permisionarios.Mayusculas($"{holder.Nombre} {holder.Paterno} {holder.Materno}"))}</h2></div>
+            <div><small>Número económico</small><strong>{Vista.E(Permisionarios.Mayusculas(holder.Economico))}</strong></div>
             <a href=/permisionarios/{id}>Abrir ficha del permisionario</a></section>
-            <div class=profile-layout><section class=panel><h2>{title} asociados</h2>
+            <div class=ficha-layout><div><section class=panel><h2>{title} asociados</h2>
             <form method=get action={route}>{Vista.Campo(drivers ? "Buscar operador o licencia" : "Buscar unidad o placa", "q", q, "search")}
             <div class=actions><button>Buscar</button>{(edit ? $"<a href={route}>{(drivers ? "Nuevo operador" : "Nueva unidad")}</a>" : "")}</div></form>
-            {(rows.Count > 0 ? $"<ul class=assignment-list>{list}</ul>" : "<p>Sin coincidencias.</p>")}</section>
-            <div>{form}{photo}</div></div>
+            {(rows.Count > 0 ? $"<ul class=assignment-list>{list}</ul>" : "<p>Sin coincidencias.</p>")}</section>{form}</div>
+            <aside>{photo}</aside></div>
             """, invalid is null ? 200 : 400);
     }
 
@@ -117,7 +117,7 @@ public static class Asignaciones
         var details = LeerDetalles(row);
         string status = invalid ? "<p class=alert role=alert>Verifica los campos requeridos, fechas y longitudes.</p>" : "";
         string attr = edit ? "" : "readonly";
-        string start = edit ? $"<form id=ficha class=panel method=post action={target}>{Vista.Csrf(http)}" : "<section class=panel>";
+        string start = edit ? $"<form id=ficha class=\"panel datos-padron\" data-captura method=post action={target}>{Vista.Csrf(http)}" : "<section class=\"panel datos-padron\">";
         string end = edit ? "<div class=actions><button>Guardar</button></div></form>" : "</section>";
         if (drivers && edit) end += "<script src=/domicilio.js defer></script>";
         string fields = string.Concat((drivers ? DatosOperador : DatosUnidad).Select(field =>
@@ -133,7 +133,7 @@ public static class Asignaciones
             };
         }));
         return $"""
-            {start}<h2>{(row.Id == 0 ? (drivers ? "Registrar operador" : "Registrar unidad") : Vista.E(NombreVisible(row, drivers)))}</h2>
+            {start}<h2>{(row.Id == 0 ? (drivers ? "Registrar operador" : "Registrar unidad") : Vista.E(Permisionarios.Mayusculas(NombreVisible(row, drivers))))}</h2>
             {status}<div class=grid>
             {Vista.Campo(drivers ? "Nombre" : "Modelo", "nombre", row.Nombre, max: 150, atributos: $"required {attr}")}
             {Vista.Campo(drivers ? "Número de licencia" : "Placa", "referencia", row.Referencia, max: 50, atributos: $"required {attr}")}
@@ -155,8 +155,8 @@ public static class Asignaciones
         if (row is null) return Results.NotFound();
 
         var form = await http.Request.ReadFormAsync();
-        row.Nombre = form["nombre"].ToString().Trim();
-        row.Referencia = form["referencia"].ToString().Trim();
+        row.Nombre = Permisionarios.Mayusculas(form["nombre"].ToString());
+        row.Referencia = Permisionarios.Mayusculas(form["referencia"].ToString());
         bool Date(string value, out DateOnly date) =>
             DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
         string validity = form["vigencia"].ToString();
@@ -166,7 +166,7 @@ public static class Asignaciones
         var details = new Dictionary<string, string>();
         foreach (var field in (type == "taxistas" ? DatosOperador : DatosUnidad))
         {
-            string value = form[field.Clave].ToString().Trim();
+            string value = Permisionarios.Mayusculas(form[field.Clave].ToString());
             if (field.Tipo == "checkbox") value = value == "1" ? "1" : "";
             valid &= value.Length <= field.Maximo && (value.Length == 0 || field.Tipo != "date" || Date(value, out _));
             if (value.Length > 0) details[field.Clave] = value;

@@ -3,8 +3,8 @@
   const names = ['estado', 'municipio', 'colonia', 'cp'];
   const properties = ['estado', 'municipio', 'colonia', 'cp'];
   const fields = names.map(name => form.elements.namedItem(name));
-  const initial = fields.map(field => field.dataset.value);
-  const save = form.querySelector('button');
+  const initial = fields.map(field => field.dataset.value.toLocaleUpperCase("es-MX"));
+  const save = form.querySelector('button[type=submit],button:not([type])');
   save.disabled = true;
   try {
     const response = await fetch('/permisionarios/catalogo-domicilios');
