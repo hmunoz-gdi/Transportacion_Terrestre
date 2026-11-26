@@ -1,27 +1,66 @@
 const ficha = document.getElementById('ficha');
 
+const contactReaders = [];
 for (const grid of ficha.querySelectorAll('[data-contactos]')) {
   const body = grid.querySelector('tbody');
   const add = grid.querySelector('[data-add]');
+  const input = grid.querySelector('[data-entry]');
   const template = grid.querySelector('template');
-  function refresh() { add.disabled = body.rows.length >= 10; }
-  add.addEventListener('click', () => {
-    if (body.rows.length >= 10) return;
-    body.append(template.content.cloneNode(true));
-    body.lastElementChild.querySelector('input').focus();
+  const empty = grid.querySelector('[data-empty]');
+  const status = grid.querySelector('[data-status]');
+  const label = grid.dataset.label;
+  function refresh() {
+    empty.hidden = body.rows.length > 0;
+    add.disabled = body.rows.length >= 10;
+  }
+
+  function agendar() {
+    input.value = input.value.trim();
+    if (!input.value) return true;
+    const value = input.value;
+    if (body.rows.length >= 10) input.setCustomValidity('Puedes agregar hasta 10 contactos de este tipo.');
+    else if (input.type === 'email' && !/^[^@]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(value))
+      input.setCustomValidity('Captura un correo con un dominio válido.');
+    if (!input.reportValidity()) return false;
+
+    const copy = template.content.cloneNode(true);
+    copy.querySelector('[data-value]').textContent = value;
+    copy.querySelector('input').value = value;
+    copy.querySelector('[data-remove]').setAttribute('aria-label', 'Quitar ' + label + ' ' + value);
+    body.append(copy);
+    input.value = '';
+    status.textContent = value + ' agregado a la cuadrícula.';
     refresh();
+    return true;
+  }
+
+  input.addEventListener('input', () => input.setCustomValidity(''));
+  add.addEventListener('click', () => {
+    if (agendar()) input.focus();
+  });
+  input.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || !input.value.trim() || event.isComposing ||
+        event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (!agendar()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   });
   body.addEventListener('click', event => {
     const button = event.target.closest('[data-remove]');
     if (!button) return;
-    const row = button.closest('tr');
-    const next = (row.nextElementSibling || row.previousElementSibling)?.querySelector('input');
-    row.remove();
+    button.closest('tr').remove();
+    input.setCustomValidity('');
+    status.textContent = 'Contacto retirado.';
     refresh();
-    (next || add).focus();
+    input.focus();
   });
+  contactReaders.push(agendar);
   refresh();
 }
+ficha.addEventListener('submit', event => {
+  if (!contactReaders.every(read => read())) event.preventDefault();
+});
 
 const fields = ['nombre', 'paterno', 'materno', 'nacimiento', 'rfc'].map(key => ficha.elements.namedItem(key));
 const [nombre, paterno, materno, nacimiento, rfc] = fields;

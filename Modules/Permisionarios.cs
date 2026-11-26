@@ -37,7 +37,8 @@ public static class Permisionarios
         var values = form[key];
         if (values.Count == 1 && !form.ContainsKey("contactos_en_filas"))
             return Contactos(values.ToString());
-        return values.Select(value => value?.Trim() ?? "").Where(value => value.Length > 0).ToArray();
+        return values.Append(form[key + "-captura"].ToString())
+            .Select(value => value?.Trim() ?? "").Where(value => value.Length > 0).ToArray();
     }
 
     public static void Mapear(WebApplication app)
@@ -172,22 +173,22 @@ public static class Permisionarios
     private static string Cuadricula(string name, string label, string values, bool edit, bool phone, string[]? submitted = null)
     {
         var entries = submitted ?? Contactos(values);
-        if (entries.Length == 0 && edit) entries = [""];
-        string Cell(string value)
-        {
-            if (!edit) return Vista.E(value);
-            return phone
-                ? Vista.Campo(label, name, value, "tel", 10, "inputmode=numeric pattern='[0-9]{10}' autocomplete=tel-national")
-                : Vista.Campo(label, name, value, "email", 254, "autocomplete=email");
-        }
-        string Row(string value) => $"<tr><td>{Cell(value)}</td>" +
-            (edit ? $"<td><button type=button class=quiet data-remove aria-label='Quitar {label.ToLowerInvariant()}'>Quitar</button></td>" : "") +
-            "</tr>";
+        string input = phone
+            ? Vista.Campo(label, name + "-captura", tipo: "tel", max: 10,
+                atributos: "data-entry inputmode=numeric pattern='[0-9]{10}' autocomplete=tel-national")
+            : Vista.Campo(label, name + "-captura", tipo: "email", max: 254, atributos: "data-entry autocomplete=email");
+        string Row(string value) => edit
+            ? $"<tr><td><span data-value>{Vista.E(value)}</span><input type=hidden name='{name}' value='{Vista.E(value)}'></td>" +
+              $"<td class=contact-action><button type=button class=quiet data-remove aria-label='Quitar {label.ToLowerInvariant()} {Vista.E(value)}'>Quitar</button></td></tr>"
+            : $"<tr><td>{Vista.E(value)}</td></tr>";
         return $"""
-            <div class=contactos data-contactos><table><thead><tr><th scope=col>{label}</th>
-            {(edit ? "<th scope=col>Acción</th>" : "")}</tr></thead>
-            <tbody>{(entries.Length > 0 ? string.Concat(entries.Select(Row)) : "<tr><td>Sin registros</td></tr>")}</tbody></table>
-            {(edit ? $"<template>{Row("")}</template><button type=button class=quiet data-add>Agregar {label.ToLowerInvariant()}</button>" : "")}</div>
+            <section class=contactos data-contactos data-label='{label.ToLowerInvariant()}'>
+            {(edit ? $"<div class=captura-contacto>{input}<button type=button class=quiet data-add>Agregar {label.ToLowerInvariant()}</button></div><template>{Row("")}</template>" : "")}
+            <table><thead><tr><th scope=col>{label}</th>
+            {(edit ? "<th scope=col class=contact-action>Acción</th>" : "")}</tr></thead>
+            <tbody>{string.Concat(entries.Select(Row))}</tbody></table>
+            <p class=contact-status data-empty {(entries.Length > 0 ? "hidden" : "")}>Sin registros</p>
+            <p class=sr-visually-hidden data-status aria-live=polite></p></section>
             """;
     }
 
