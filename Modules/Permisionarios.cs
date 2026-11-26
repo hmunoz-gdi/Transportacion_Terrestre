@@ -204,7 +204,7 @@ public static class Permisionarios
         string link = "";
         if (row.Id > 0)
         {
-            link = $"<a href=/permisionarios/{row.Id}/historial>Historial de la ficha</a>";
+            link = $"<a href=/permisionarios/{row.Id}/historial>Historial de la ficha</a><a class=button href=/permisionarios/{row.Id}/caratula>Carátula</a>";
             if (Perfiles.Puede(http.User, "Documentos.Consultar"))
                 link += $"<a href=/permisionarios/{row.Id}/documentos>Documentos e historial</a>";
             if (Perfiles.Puede(http.User, "Taxistas.Consultar"))

@@ -49,6 +49,14 @@ public static class Fotografias
             row.Tipo == kind && row.Foto != null);
     }
 
+    internal static async Task<string?> RutaTitular(RegistroDb db, RepositorioPdf store, long id)
+    {
+        var key = await Versiones(db, id, null, null).OrderByDescending(row => row.Foto != Guid.Empty)
+            .ThenByDescending(row => row.Id).Select(row => row.Foto).FirstOrDefaultAsync();
+        var path = store.RutaFoto(id, null, key.GetValueOrDefault());
+        return File.Exists(path) ? path : null;
+    }
+
     private static string? Formato(ReadOnlySpan<byte> bytes)
     {
         if (bytes.StartsWith(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 })) return "image/png";

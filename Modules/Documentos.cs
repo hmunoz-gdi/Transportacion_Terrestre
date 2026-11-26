@@ -17,6 +17,9 @@ public sealed class RepositorioPdf
         Directory.CreateDirectory(root);
     }
 
+    public string RutaCaratula(long id, Guid folio) =>
+        Path.Combine(root, "caratulas", id.ToString(), $"{folio:N}.pdf");
+
     public string RutaFoto(long id, long? record, Guid version = default)
     {
         string directory = Path.Combine(root, "fotografias", id.ToString());
@@ -29,7 +32,11 @@ public sealed class RepositorioPdf
 
     public async Task Guardar(long id, Guid key, Stream source, CancellationToken cancellation)
     {
-        string path = Ruta(id, key);
+        await GuardarArchivo(Ruta(id, key), source, cancellation);
+    }
+
+    public static async Task GuardarArchivo(string path, Stream source, CancellationToken cancellation)
+    {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         string temporary = path + ".part";
         try

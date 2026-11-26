@@ -260,6 +260,45 @@ namespace Transportacion.Migraciones
                     b.ToTable("Asignaciones");
                 });
 
+            modelBuilder.Entity("Transportacion.CaratulaEmitida", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CodigoHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PdfHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("PermisionarioId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("UnidadId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Usuario")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodigoHash")
+                        .IsUnique();
+
+                    b.HasIndex("UnidadId");
+
+                    b.HasIndex("PermisionarioId", "Fecha");
+
+                    b.ToTable("Caratulas");
+                });
+
             modelBuilder.Entity("Transportacion.Evento", b =>
                 {
                     b.Property<long>("Id")
@@ -515,6 +554,19 @@ namespace Transportacion.Migraciones
                         .HasForeignKey("PermisionarioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Transportacion.CaratulaEmitida", b =>
+                {
+                    b.HasOne("Transportacion.Permisionario", null)
+                        .WithMany()
+                        .HasForeignKey("PermisionarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Transportacion.Asignacion", null)
+                        .WithMany()
+                        .HasForeignKey("UnidadId");
                 });
 
             modelBuilder.Entity("Transportacion.VersionFicha", b =>

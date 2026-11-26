@@ -55,6 +55,16 @@ Escribe y confirma la contraseña nueva. La terminal oculta lo que tecleas. El c
 - `domicilios.json` incluye una muestra. Sustituye sus filas por el catálogo autorizado de estado, municipio o alcaldía, colonia y código postal. Cada código postal asociado a una colonia ocupa una fila. Reinicia la aplicación para recargar el catálogo.
 - La base comienza vacía. La importación de SQL Server y los PDF históricos, las cesiones, sustituciones, captura directa desde cámara y carátula quedan para sus módulos respectivos.
 
+## Emitir y verificar carátulas
+
+En la ficha de **Permisionarios**, abre **Carátula**. Para emitir, la ficha debe estar activa y tener una fotografía. Cuando haya unidades activas, selecciona cuál irá en el documento. Si el permisionario carece de unidades activas, los datos del vehículo aparecen como **S/D**. Los perfiles que pueden editar Permisionarios pueden emitir. Los perfiles que pueden consultar la ficha pueden descargar emisiones previas.
+
+El PDF tamaño carta conserva el folio, la fotografía y los datos de la fecha de emisión. Se guarda en el directorio privado `caratulas` dentro del repositorio de archivos. PostgreSQL conserva los metadatos, la huella SHA-256 del original y la huella del código aleatorio de verificación. Respalda ese directorio junto con los demás documentos y PostgreSQL.
+
+Para escanear el QR desde otro equipo o un teléfono, configura la URL HTTPS real del sistema, accesible desde esos dispositivos, **antes de emitir documentos**. En un servidor se configura mediante `Caratula__UrlBase`. Para desarrollo en Windows se puede usar `dotnet user-secrets set "Caratula:UrlBase" "https://dominio-institucional.example"` con la URL real. El valor de desarrollo por defecto es `http://localhost:5080`, que solo sirve para verificar en el mismo equipo. Los QR emitidos conservan la URL original.
+
+El verificador público muestra el folio, la fecha y si el titular o la unidad está dado de baja. Al seleccionar un PDF en el verificador, el navegador calcula su huella localmente y verifica si coincide con el archivo emitido. En papel, coteja los datos y la fotografía con el PDF original, accesible mediante una sesión autorizada, porque un QR puede copiarse de una impresión a otra.
+
 ## Bajas e historial de expedientes
 
 Cada permisionario admite hasta **tres operadores activos**. Las altas simultáneas se serializan por permisionario. Dar de baja un operador libera un lugar. Los registros que ya superen el límite se conservan y las nuevas altas se habilitan cuando queden menos de tres operadores activos.
