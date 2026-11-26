@@ -226,6 +226,9 @@ namespace Transportacion.Migraciones
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<DateTimeOffset?>("Baja")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Detalles")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -252,7 +255,7 @@ namespace Transportacion.Migraciones
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PermisionarioId");
+                    b.HasIndex("PermisionarioId", "Tipo", "Baja");
 
                     b.ToTable("Asignaciones");
                 });
@@ -369,6 +372,48 @@ namespace Transportacion.Migraciones
                     b.ToTable("Permisionarios");
                 });
 
+            modelBuilder.Entity("Transportacion.VersionFicha", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Accion")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Datos")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("Foto")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("PermisionarioId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("RegistroId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Usuario")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermisionarioId", "Tipo", "RegistroId", "Id");
+
+                    b.ToTable("Historial");
+                });
+
             modelBuilder.Entity("Transportacion.VersionPdf", b =>
                 {
                     b.Property<long>("Id")
@@ -464,6 +509,15 @@ namespace Transportacion.Migraciones
                 });
 
             modelBuilder.Entity("Transportacion.Asignacion", b =>
+                {
+                    b.HasOne("Transportacion.Permisionario", null)
+                        .WithMany()
+                        .HasForeignKey("PermisionarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Transportacion.VersionFicha", b =>
                 {
                     b.HasOne("Transportacion.Permisionario", null)
                         .WithMany()

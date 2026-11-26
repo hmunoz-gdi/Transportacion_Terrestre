@@ -47,6 +47,8 @@ public static class Permisionarios
         var group = app.MapGroup("/permisionarios").RequireAuthorization("Permisionarios.Consultar");
         group.MapGet("", Buscar);
         Fotografias.Mapear(group, "Permisionarios");
+        group.MapGet("/{id:long}/historial", (long id, HttpContext http, RegistroDb db, long? antes) =>
+            HistorialFichas.Ver(http, db, id, HistorialFichas.Titular, 0, $"/permisionarios/{id}", antes));
         group.MapGet("/catalogo-domicilios", () => Results.Json(catalog));
         group.MapGet("/nuevo", (HttpContext http) => Ficha(http, new Permisionario(), true)).RequireAuthorization("Permisionarios.Cambiar");
         group.MapGet("/{id:long}", async (long id, HttpContext http, RegistroDb db) =>
@@ -115,6 +117,8 @@ public static class Permisionarios
                 return Ficha(http, row, true, "Selecciona un domicilio completo del catálogo.", phones, mails);
             if (id == 0) db.Add(row);
             Acceso.Registrar(db, http, id == 0 ? "Alta de permisionario" : "Edición de permisionario", row.Economico);
+            if (id == 0) await db.SaveChangesAsync();
+            HistorialFichas.Guardar(db, http, row.Id, HistorialFichas.Titular, 0, id == 0 ? "Alta" : "Edición", row);
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
             return Results.Redirect($"/permisionarios/{row.Id}");
@@ -129,6 +133,7 @@ public static class Permisionarios
             if (row.Baja is null)
             {
                 row.Baja = DateTimeOffset.UtcNow;
+                HistorialFichas.Guardar(db, http, id, HistorialFichas.Titular, 0, "Baja", row);
                 Acceso.Registrar(db, http, "Baja de permisionario", $"{row.Id} · {row.Economico}");
                 await db.SaveChangesAsync();
             }
@@ -199,6 +204,7 @@ public static class Permisionarios
         string link = "";
         if (row.Id > 0)
         {
+            link = $"<a href=/permisionarios/{row.Id}/historial>Historial de la ficha</a>";
             if (Perfiles.Puede(http.User, "Documentos.Consultar"))
                 link += $"<a href=/permisionarios/{row.Id}/documentos>Documentos e historial</a>";
             if (Perfiles.Puede(http.User, "Taxistas.Consultar"))

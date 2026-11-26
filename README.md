@@ -55,6 +55,14 @@ Escribe y confirma la contraseña nueva. La terminal oculta lo que tecleas. El c
 - `domicilios.json` incluye una muestra. Sustituye sus filas por el catálogo autorizado de estado, municipio o alcaldía, colonia y código postal. Cada código postal asociado a una colonia ocupa una fila. Reinicia la aplicación para recargar el catálogo.
 - La base comienza vacía. La importación de SQL Server y los PDF históricos, las cesiones, sustituciones, captura directa desde cámara y carátula quedan para sus módulos respectivos.
 
+## Bajas e historial de expedientes
+
+Cada permisionario admite hasta **tres operadores activos**. Las altas simultáneas se serializan por permisionario. Dar de baja un operador libera un lugar. Los registros que ya superen el límite se conservan y las nuevas altas se habilitan cuando queden menos de tres operadores activos.
+
+Las bajas de operadores y unidades conservan la ficha, su fotografía y el historial para consulta. Cada alta, edición y baja de permisionario, operador o unidad guarda una versión con fecha y usuario. Consulta las versiones desde **Historial de la ficha**. Los nuevos reemplazos de fotografía también guardan la imagen anterior. Los PDF mantienen su historial en **Documentos**.
+
+Al aplicar la migración, la aplicación guarda una copia inicial de los registros existentes e interpreta como bajas las fechas de baja de operadores que ya se cumplieron. Las versiones sustituidas antes de la actualización se pueden recuperar solo si existen en un respaldo anterior.
+
 ## Reglas de captura
 
 En fichas de padrón, **Enter** mueve el foco al siguiente campo. En observaciones, **Mayús+Enter** inserta un salto de línea. Los datos de texto del padrón se guardan en mayúsculas. Los teléfonos y correos son opcionales. Los correos se capturan, guardan y muestran con su escritura original.

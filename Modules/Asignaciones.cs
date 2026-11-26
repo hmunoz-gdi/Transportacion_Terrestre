@@ -6,6 +6,8 @@ namespace Transportacion;
 
 public static class Asignaciones
 {
+    private const int MaximoOperadores = 3;
+
     private record Campo(string Clave, string Etiqueta, string Tipo = "text", int Maximo = 150);
     private static readonly Campo[] DatosOperador =
     [
@@ -14,7 +16,7 @@ public static class Asignaciones
         new("tipoTia", "Tipo de TIA"), new("numeroTia", "Número de TIA"),
         new("vigenciaApto", "Vigencia de Apto", "date"),
         new("vigenciaComprobante", "Vigencia de comprobante", "date"),
-        new("alta", "Fecha de alta", "date"), new("baja", "Fecha de baja", "date"),
+        new("alta", "Fecha de alta", "date"),
         new("estado", "Estado"), new("municipio", "Municipio o alcaldía"),
         new("colonia", "Colonia"), new("cp", "Código postal", Maximo: 5),
         new("calle", "Calle"), new("localidad", "Localidad"),
@@ -51,6 +53,10 @@ public static class Asignaciones
                 .RequireAuthorization(module + ".Cambiar");
             group.MapPost("/{registro:long}", (long id, long registro, HttpContext http, RegistroDb db) => Guardar(id, registro, type, http, db))
                 .RequireAuthorization(module + ".Cambiar");
+            group.MapGet("/{registro:long}/historial", (long id, long registro, HttpContext http, RegistroDb db, long? antes) =>
+                HistorialFichas.Ver(http, db, id, type, registro, $"{Ruta(id, type)}/{registro}", antes));
+            group.MapPost("/{registro:long}/baja", (long id, long registro, HttpContext http, RegistroDb db) =>
+                Baja(id, registro, type, http, db)).RequireAuthorization(module + ".Cambiar");
             Fotografias.Mapear(group, module, type);
         }
     }
@@ -79,7 +85,8 @@ public static class Asignaciones
             return $"""
                 <li><a href='{Ruta(holder.Id, type)}/{row.Id}'>{Vista.E(Permisionarios.Mayusculas(NombreVisible(row, drivers)))}</a>
                 <small>{Vista.E(Permisionarios.Mayusculas(row.Referencia))} · {Vista.E(Permisionarios.Mayusculas(holder.Economico))}
-                · {Vista.E(Permisionarios.Mayusculas($"{holder.Nombre} {holder.Paterno} {holder.Materno}"))}</small></li>
+                · {Vista.E(Permisionarios.Mayusculas($"{holder.Nombre} {holder.Paterno} {holder.Materno}"))}
+                · {(row.Baja is null ? "Activo" : "Baja")}</small></li>
                 """;
         }));
         string add = Perfiles.Puede(http.User, drivers ? "Taxistas.Cambiar" : "Unidades.Cambiar")
@@ -109,7 +116,10 @@ public static class Asignaciones
         if (current is null) return Results.NotFound();
 
         bool drivers = type == "taxistas";
-        bool edit = holder.Baja is null && Perfiles.Puede(http.User, drivers ? "Taxistas.Cambiar" : "Unidades.Cambiar");
+        bool canChange = Perfiles.Puede(http.User, drivers ? "Taxistas.Cambiar" : "Unidades.Cambiar");
+        int active = drivers ? await ContarOperadores(db, id) : 0;
+        bool atLimit = drivers && active >= MaximoOperadores;
+        bool edit = holder.Baja is null && current.Baja is null && canChange && (registro != 0 || !atLimit);
         string route = Ruta(id, type);
         string title = drivers ? "Operadores" : "Unidad Vehicular";
         q = q?.Trim();
@@ -129,10 +139,19 @@ public static class Asignaciones
         }
         var rows = await query.OrderBy(row => row.Nombre).ThenBy(row => row.Id).Take(100).ToListAsync();
         string list = string.Concat(rows.Select(row =>
-            $"<li><a href={route}/{row.Id}>{Vista.E(Permisionarios.Mayusculas(NombreVisible(row, drivers)))}</a><small>{Vista.E(Permisionarios.Mayusculas(row.Referencia))}</small></li>"));
+            $"<li><a href={route}/{row.Id}>{Vista.E(Permisionarios.Mayusculas(NombreVisible(row, drivers)))}</a><small>{Vista.E(Permisionarios.Mayusculas(row.Referencia))} · {(row.Baja is null ? "Activo" : "Baja")}</small></li>"));
         string target = registro == 0 ? route : $"{route}/{registro}";
         string form = registro == 0 && !edit ? "" : Formulario(http, current, drivers, edit, target, invalid is not null);
-        string photo = registro == 0 ? (edit ? "<p class=hint>Guarda el registro para agregar su fotografía.</p>" : "") : Fotografias.Panel(http, target + "/foto", edit, id, registro);
+        string photo = registro == 0 ? (edit ? "<p class=hint>Guarda el registro para agregar su fotografía.</p>" : "") : Fotografias.Panel(http, target + "/foto", edit, id, registro, type);
+        string history = registro == 0 ? "" :
+            $"<p><a href='{target}/historial'>Historial de la ficha</a></p>";
+        string status = current.Baja is DateTimeOffset ended
+            ? $"<p class=badge>Baja · {ended:dd/MM/yyyy HH:mm} UTC</p>" : "";
+        string baja = registro > 0 && canChange && current.Baja is null ? $"""
+            <details class=panel><summary>Dar de baja</summary>
+            <form method=post action='{target}/baja'>{Vista.Csrf(http)}
+            <p>El registro seguirá disponible para consulta.</p><button>Confirmar baja</button></form></details>
+            """ : "";
         return Vista.Pagina(http, title, $"""
             <section class=holder><div><small>Permisionario vinculado</small>
             <h2>{Vista.E(Permisionarios.Mayusculas($"{holder.Nombre} {holder.Paterno} {holder.Materno}"))}</h2></div>
@@ -141,8 +160,10 @@ public static class Asignaciones
             <div class=ficha-layout><div><section class=panel><h2>{title} asociados</h2>
             <form method=get action={route}>{Vista.Campo(drivers ? "Buscar operador o licencia" : "Buscar unidad o placa", "q", q, "search")}
             <div class=actions><button>Buscar</button>{(edit ? $"<a href={route}>{(drivers ? "Nuevo operador" : "Nueva unidad")}</a>" : "")}</div></form>
-            {(rows.Count > 0 ? $"<ul class=assignment-list>{list}</ul>" : "<p>Sin coincidencias.</p>")}</section>{form}</div>
-            <aside>{photo}</aside></div>
+            {(drivers ? $"<p>{active} de {MaximoOperadores} operadores activos.</p>" : "")}
+            {(atLimit && registro == 0 && canChange ? "<p>Para registrar un operador, da de baja uno activo.</p>" : "")}
+            {(rows.Count > 0 ? $"<ul class=assignment-list>{list}</ul>" : "<p>Sin coincidencias.</p>")}</section>
+            {status}{history}{form}{baja}</div><aside>{photo}</aside></div>
             """, invalid is null ? 200 : 400);
     }
 
@@ -188,6 +209,26 @@ public static class Asignaciones
             """;
     }
 
+    private static Task<int> ContarOperadores(RegistroDb db, long id) =>
+        db.Asignaciones.CountAsync(row => row.PermisionarioId == id && row.Tipo == "taxistas" && row.Baja == null);
+
+    private static async Task<IResult> Baja(long id, long registro, string type, HttpContext http, RegistroDb db)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        await db.BloquearFicha(id);
+        var row = await db.Asignaciones.SingleOrDefaultAsync(r => r.Id == registro && r.PermisionarioId == id && r.Tipo == type);
+        if (row is null) return Results.NotFound();
+        if (row.Baja is null)
+        {
+            row.Baja = DateTimeOffset.UtcNow;
+            HistorialFichas.Guardar(db, http, id, type, registro, "Baja", row);
+            Acceso.Registrar(db, http, type == "taxistas" ? "Baja de operador" : "Baja de unidad", $"{id} · {row.Referencia}");
+            await db.SaveChangesAsync();
+        }
+        await transaction.CommitAsync();
+        return Results.Redirect($"{Ruta(id, type)}/{registro}");
+    }
+
     private static async Task<IResult> Guardar(long id, long registro, string type, HttpContext http, RegistroDb db)
     {
         await using var transaction = await db.Database.BeginTransactionAsync();
@@ -198,6 +239,12 @@ public static class Asignaciones
         var row = registro == 0 ? new Asignacion { PermisionarioId = id, Tipo = type } :
             await db.Asignaciones.SingleOrDefaultAsync(r => r.Id == registro && r.PermisionarioId == id && r.Tipo == type);
         if (row is null) return Results.NotFound();
+        if (row.Baja is not null) return Results.Conflict("El registro está dado de baja.");
+        if (registro == 0 && type == "taxistas" && await ContarOperadores(db, id) >= MaximoOperadores)
+            return Vista.Pagina(http, "Límite de operadores", $"""
+                <p>El permisionario ya tiene tres operadores activos. Da de baja uno para registrar otro.</p>
+                <a href='{Ruta(id, type)}'>Volver a Operadores</a>
+                """, 409);
 
         var form = await http.Request.ReadFormAsync();
         row.Nombre = Permisionarios.Mayusculas(form["nombre"].ToString());
@@ -226,7 +273,12 @@ public static class Asignaciones
         row.Detalles = JsonSerializer.Serialize(details);
         if (!valid) return await Panel(id, registro, type, http, db, null, row);
 
-        if (registro == 0) db.Asignaciones.Add(row);
+        if (registro == 0)
+        {
+            db.Asignaciones.Add(row);
+            await db.SaveChangesAsync();
+        }
+        HistorialFichas.Guardar(db, http, id, type, row.Id, registro == 0 ? "Alta" : "Edición", row);
         Acceso.Registrar(db, http, $"{(registro == 0 ? "Alta" : "Edición")} de {(type == "taxistas" ? "operador" : "unidad")}",
             $"{id} · {row.Referencia}");
         await db.SaveChangesAsync();

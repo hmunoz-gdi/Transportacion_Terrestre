@@ -17,8 +17,13 @@ public sealed class RepositorioPdf
         Directory.CreateDirectory(root);
     }
 
-    public string RutaFoto(long id, long? record) =>
-        Path.Combine(root, "fotografias", id.ToString(), (record?.ToString() ?? "permisionario") + ".img");
+    public string RutaFoto(long id, long? record, Guid version = default)
+    {
+        string directory = Path.Combine(root, "fotografias", id.ToString());
+        string name = record?.ToString() ?? "permisionario";
+        return version == Guid.Empty ? Path.Combine(directory, name + ".img")
+            : Path.Combine(directory, name, $"{version:N}.img");
+    }
 
     public string Ruta(long id, Guid key) => Path.Combine(root, id.ToString(), $"{key:N}.pdf");
 

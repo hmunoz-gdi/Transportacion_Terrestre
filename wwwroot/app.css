@@ -42,3 +42,6 @@
 .app-sidebar nav a:hover,.app-sidebar nav a[aria-current=page]{background:#dff0e7}
 .app-sidebar nav form{margin-top:10px;padding:0 12px}
 @media(max-width:720px){.app-layout{grid-template-columns:minmax(0,1fr)}.app-sidebar{border-right:0;border-bottom:1px solid var(--border);padding:10px 14px}.app-sidebar nav{display:flex;gap:4px}.app-sidebar nav form{margin:0;padding:0}}
+.history-data{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:5px 16px;margin-bottom:0;overflow-wrap:anywhere}
+.history-data dt{font-weight:600}
+.history-data dd{margin:0;white-space:pre-wrap}
