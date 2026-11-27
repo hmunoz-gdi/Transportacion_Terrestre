@@ -339,6 +339,9 @@ namespace Transportacion.Migraciones
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateOnly?>("Alta")
+                        .HasColumnType("date");
+
                     b.Property<DateTimeOffset?>("Baja")
                         .HasColumnType("timestamp with time zone");
 

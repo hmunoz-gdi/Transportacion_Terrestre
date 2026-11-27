@@ -63,7 +63,7 @@ public static class HistorialFichas
             if (property.Name is "Id" or "PermisionarioId" or "Tipo") return "";
             string label = property.Name switch
             {
-                "Baja" => "Fecha de baja", "Nacimiento" => "Fecha de nacimiento", "Cp" or "cp" => "Código postal",
+                "Alta" or "alta" => "Fecha de alta", "Baja" => "Fecha de baja", "Nacimiento" => "Fecha de nacimiento", "Cp" or "cp" => "Código postal",
                 "Paterno" or "paterno" => "Apellido paterno", "Materno" or "materno" => "Apellido materno",
                 "Economico" => "Número económico", "Rfc" => "RFC", "Referencia" => "Licencia o placa",
                 _ => System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(

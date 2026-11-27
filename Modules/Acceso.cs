@@ -154,7 +154,7 @@ public static class Acceso
         if (result.Succeeded)
         {
             await signIn.SignInAsync(account!, isPersistent: false);
-            return Results.Redirect("/permisionarios");
+            return Results.Redirect("/");
         }
         return Login(http, result.IsLockedOut ? "Cuenta bloqueada. Solicita el desbloqueo a un administrador."
             : "No fue posible iniciar sesión. Revisa tu usuario y contraseña.");

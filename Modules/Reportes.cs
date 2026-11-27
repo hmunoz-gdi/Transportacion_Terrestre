@@ -77,7 +77,7 @@ public static class Reportes
                 SELECT 'permisionario'::text AS "Tipo", p."Id", p."Id" AS "PermisionarioId",
                     p."Economico", p."Agrupacion", concat_ws(' ', p."Nombre", p."Paterno", p."Materno") AS "Titular",
                     concat_ws(' ', p."Nombre", p."Paterno", p."Materno") AS "Registro", p."Permiso" AS "Referencia",
-                    (h.fecha AT TIME ZONE 'America/Mexico_City')::date AS "Alta",
+                    COALESCE(p."Alta", (h.fecha AT TIME ZONE 'America/Mexico_City')::date) AS "Alta",
                     (p."Baja" AT TIME ZONE 'America/Mexico_City')::date AS "Baja"
                 FROM "Permisionarios" p
                 LEFT JOIN altas h ON h."PermisionarioId" = p."Id" AND h."Tipo" = 'permisionario' AND h."RegistroId" = 0

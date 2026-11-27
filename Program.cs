@@ -69,7 +69,7 @@ using (var scope = app.Services.CreateScope())
 {
     await Acceso.Inicializar(scope.ServiceProvider, app.Configuration);
 }
-app.MapGet("/", () => Results.Redirect("/permisionarios"));
+Inicio.Mapear(app);
 app.MapGet("/denegado", (HttpContext http) => Vista.Pagina(http, "Acceso denegado", "<p>Tu perfil no tiene permiso para esta operación.</p>"));
 Acceso.Mapear(app);
 Perfiles.Mapear(app);

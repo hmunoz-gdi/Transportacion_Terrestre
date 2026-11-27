@@ -71,3 +71,9 @@
 .ficha-acciones .button{background:#fff;color:var(--green)}
 .ficha-acciones .button:hover{background:#edf4f0}
 .ficha-acciones button:not(:disabled):hover{background:#104735}
+
+.modulos-inicio{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin-top:22px}
+.modulo-inicio{display:block;min-width:0;padding:20px;background:#fff;border:1px solid var(--border);border-radius:12px;text-decoration:none;font-weight:400}
+.modulo-inicio:hover{border-color:var(--green);background:#f6fbf8}
+.modulo-inicio h2{margin:0 0 6px}
+.modulo-inicio p{margin:0;color:#476157}

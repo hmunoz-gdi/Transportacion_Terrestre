@@ -8,6 +8,8 @@ namespace Transportacion;
 
 public static class Permisionarios
 {
+    private static readonly TimeZoneInfo ZonaAlta = TimeZoneInfo.FindSystemTimeZoneById("America/Mexico_City");
+
     internal static readonly string[] Agrupaciones =
     [
         "NUEVA IMAGEN", "PORTO TAXI", "YELLOW CAB", "SITIO 300", "AERO TAXI", "TAXI RIDE",
@@ -115,7 +117,11 @@ public static class Permisionarios
             var address = new Domicilio(row.Estado, row.Municipio, row.Colonia, row.Cp);
             if (address != new Domicilio("", "", "", "") && !catalog.Contains(address))
                 return Ficha(http, row, true, "Selecciona un domicilio completo del catálogo.", phones, mails);
-            if (id == 0) db.Add(row);
+            if (id == 0)
+            {
+                row.Alta = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, ZonaAlta).DateTime);
+                db.Add(row);
+            }
             Acceso.Registrar(db, http, id == 0 ? "Alta de permisionario" : "Edición de permisionario", row.Economico);
             if (id == 0) await db.SaveChangesAsync();
             HistorialFichas.Guardar(db, http, row.Id, HistorialFichas.Titular, 0, id == 0 ? "Alta" : "Edición", row);
@@ -223,6 +229,8 @@ public static class Permisionarios
             {Vista.Campo("Apellido paterno", "paterno", row.Paterno, max: 90, atributos: attr)}
             {Vista.Campo("Apellido materno", "materno", row.Materno, max: 90, atributos: attr)}
             {(edit ? SelectorAgrupacion(Mayusculas(row.Agrupacion)) : Vista.Campo("Agrupación", "agrupacion", row.Agrupacion, atributos: attr))}
+            {Vista.Campo("Fecha de alta", "alta", row.Alta?.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) ??
+                (row.Id == 0 ? "Automática al guardar" : "Sin fecha registrada"), atributos: "readonly")}
             {Vista.Campo("Fecha de nacimiento", "nacimiento", row.Nacimiento?.ToString("yyyy-MM-dd"), "date", atributos: attr)}
             <div>{Vista.Campo("RFC", "rfc", row.Rfc, max: 13, atributos: attr)}
             {(edit ? "<small id=rfc-sugerencia aria-live=polite></small><button id=rfc-usar class=quiet type=button hidden>Usar base sugerida</button>" : "")}</div>

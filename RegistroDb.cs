@@ -50,6 +50,7 @@ public sealed class Permisionario
     public string Calle { get; set; } = "";
     public string Rfc { get; set; } = "";
     public DateOnly? Nacimiento { get; set; }
+    public DateOnly? Alta { get; set; }
     public string Permiso { get; set; } = "";
     public DateOnly? Vigencia { get; set; }
     public string Telefonos { get; set; } = "";

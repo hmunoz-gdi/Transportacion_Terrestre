@@ -28,19 +28,14 @@ public static class Vista
                 path.Value?.Contains("/taxistas", StringComparison.OrdinalIgnoreCase) == true;
             bool vehicles = path.StartsWithSegments("/unidades") ||
                 path.Value?.Contains("/unidades", StringComparison.OrdinalIgnoreCase) == true;
-            string records = Perfiles.Puede(http.User, "Permisionarios.Consultar")
-                ? Link("/permisionarios", "Permisionarios", path.StartsWithSegments("/permisionarios") && !operators && !vehicles) : "";
-            string drivers = Perfiles.Puede(http.User, "Taxistas.Consultar")
-                ? Link("/operadores", "Operadores", operators) : "";
-            string units = Perfiles.Puede(http.User, "Unidades.Consultar")
-                ? Link("/unidades", "Unidad Vehicular", vehicles) : "";
-            string reports = Perfiles.Puede(http.User, "Reportes.Consultar")
-                ? Link("/reportes", "Reportes", path.StartsWithSegments("/reportes")) : "";
-            string admin = http.User.IsInRole("Administrador")
-                ? Link("/usuarios", "Usuarios", path.StartsWithSegments("/usuarios") || path.StartsWithSegments("/perfiles")) : "";
+            string selected = operators ? "/operadores" : vehicles ? "/unidades" :
+                path.StartsWithSegments("/perfiles") ? "/usuarios" : "";
+            string modules = string.Concat(Inicio.Visibles(http).Select(module =>
+                Link(module.Ruta, module.Ruta == "/usuarios" ? "Usuarios" : module.Nombre, selected.Length > 0
+                    ? module.Ruta == selected : path.StartsWithSegments(module.Ruta))));
             navegacion = $"""
                 <aside class=app-sidebar><nav aria-label="Menú principal">
-                {records}{drivers}{units}{reports}{admin}
+                {Link("/", "Inicio", path == "/")}{modules}
                 <form method=post action=/salir>{Csrf(http)}<button class=quiet>Salir</button></form>
                 </nav></aside>
                 """;
